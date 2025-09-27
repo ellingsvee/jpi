@@ -15,6 +15,7 @@ find_package(MPI REQUIRED)
 nanobind_add_module(backend MODULE
     src/jpi/backend/module.cc
     src/jpi/backend/bcast.cc
+    src/jpi/backend/utils.h
 )
 target_include_directories("backend" PUBLIC ${XLA_DIR} ${MPI_INCLUDE_PATH})
 target_link_libraries(backend PRIVATE MPI::MPI_CXX)
