@@ -10,11 +10,12 @@ execute_process(
 message(STATUS "XLA include directory: ${XLA_DIR}")
 
 find_package(nanobind CONFIG REQUIRED)
+find_package(MPI REQUIRED)
 
-# nanobind_add_module(_core MODULE src/cpp/csr/csr_module.cc)
 nanobind_add_module(backend MODULE
     src/jpi/backend/module.cc
-    src/jpi/backend/csr_spmm.cc
+    src/jpi/backend/bcast.cc
 )
-target_include_directories("backend" PUBLIC ${XLA_DIR})
+target_include_directories("backend" PUBLIC ${XLA_DIR} ${MPI_INCLUDE_PATH})
+target_link_libraries(backend PRIVATE MPI::MPI_CXX)
 install(TARGETS backend DESTINATION ${SKBUILD_PROJECT_NAME})

@@ -1,22 +1,18 @@
-#include "csr_spmm.h"
+// #include "csr_spmm.h"
+#include "bcast.h"
 #include "nanobind/nanobind.h"
 
 namespace nb = nanobind;
 namespace ffi = xla::ffi;
 
-XLA_FFI_DEFINE_HANDLER_SYMBOL(CsrSpmm, CsrSpmmDispatch,
-                              ffi::Ffi::Bind()
-                                  .Attr<int64_t>("n_cols")
-                                  .Arg<ffi::AnyBuffer>() // Ap
-                                  .Arg<ffi::AnyBuffer>() // Aj
-                                  .Arg<ffi::AnyBuffer>() // Ax
-                                  .Arg<ffi::AnyBuffer>() // Bp
-                                  .Arg<ffi::AnyBuffer>() // Bj
-                                  .Arg<ffi::AnyBuffer>() // Bx
-                                  .Ret<ffi::AnyBuffer>() // Cp
-                                  .Ret<ffi::AnyBuffer>() // Cj
-                                  .Ret<ffi::AnyBuffer>() // Cx
-                                  .Ret<ffi::AnyBuffer>() // nnz
+// Register the handler symbol (matches Python ffi_call target)
+XLA_FFI_DEFINE_HANDLER_SYMBOL(
+    Bcast,
+    BcastDispatch,
+    ffi::Ffi::Bind()
+        .Attr<int64_t>("root")
+        .Arg<ffi::AnyBuffer>() // Input buffer x
+        .Ret<ffi::AnyBuffer>() // Output buffer y
 );
 
 template <typename T>
@@ -27,11 +23,11 @@ nb::capsule EncapsulateFfiHandler(T *fn)
     return nb::capsule(reinterpret_cast<void *>(fn));
 }
 
-NB_MODULE(_core, m)
+NB_MODULE(backend, m)
 {
     m.def("registrations", []()
           {
     nb::dict registrations;
-    registrations["csr_spmm"] = EncapsulateFfiHandler(CsrSpmm);
+    registrations["bcast"] = EncapsulateFfiHandler(Bcast);
     return registrations; });
 }
