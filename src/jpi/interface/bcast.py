@@ -1,18 +1,16 @@
 from functools import partial
 import jax
-import jax.numpy as jnp
 
 
 def _bcast_impl(x, root):
     y_type = jax.ShapeDtypeStruct(x.shape, x.dtype)
     input_output_aliases = {0: 0}  # alias input and output buffers
-    # ffi_call returns a tuple; unpack the first element
     return jax.ffi.ffi_call(
         "bcast",
         (y_type,),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x, root=root)[0]
+    )(x, root=root)[0]  # Unpacking the tuple at the end
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(1,))

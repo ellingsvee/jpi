@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 from mpi4py import MPI
-from jpi.bcast import bcast
+from jpi.interface.bcast import bcast
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
@@ -22,8 +22,11 @@ def test_func(x):
 bcast_grad = jax.grad(test_func)
 
 if __name__ == "__main__":
-    # print(f"Rank {rank} before bcast: x = {x}")
-    # x_bcast = bcast(x, root=0)
-    # print(f"Rank {rank} after bcast: x_bcast = {x_bcast}")
-    x_bcast_grad = bcast_grad(x)
+    x_copy = jnp.copy(x)
+
+    print(f"Rank {rank} before bcast: x = {x}")
+    x_bcast = bcast(x, root=0)
+    print(f"Rank {rank} after bcast: x_bcast = {x_bcast}")
+
+    x_bcast_grad = bcast_grad(x_copy)
     print(f"Rank {rank} after bcast_grad: x_bcast_grad = {x_bcast_grad}")
