@@ -21,13 +21,6 @@ ffi::Error BcastImpl(int root, int rank, int size, int numel, ffi::AnyBuffer x,
   const T *x_data = x.typed_data<T>();
   T *y_data = y->typed_data<T>();
 
-  // Check for aliasing (e.g., donation may have triggered)
-  ffi::Error res = handle_aliasing(x_data, y_data, rank, root);
-  if (res.failure())
-  {
-    return res;
-  }
-
   // Call MPI_Bcast
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
   int ierr = MPI_Bcast(

@@ -10,23 +10,6 @@
 #include "xla/ffi/api/ffi.h"
 namespace ffi = xla::ffi;
 
-MPI_Op GetMPIOp(int op)
-{
-  switch (op)
-  {
-  case 0:
-    return MPI_SUM;
-  case 1:
-    return MPI_PROD;
-  case 2:
-    return MPI_MIN;
-  case 3:
-    return MPI_MAX;
-  default:
-    throw std::invalid_argument("Invalid reduction op");
-  }
-}
-
 template <typename T>
 ffi::Error ReduceImpl(int root, int rank, int size, int numel, int op, ffi::AnyBuffer x,
                       ffi::Result<ffi::AnyBuffer> y)
@@ -34,13 +17,6 @@ ffi::Error ReduceImpl(int root, int rank, int size, int numel, int op, ffi::AnyB
   // Get typed data pointers
   T *x_data = x.typed_data<T>(); // Not const because of MPI_IN_PLACE
   T *y_data = y->typed_data<T>();
-
-  // Check for aliasing
-  ffi::Error res = handle_aliasing(x_data, y_data, rank, root);
-  if (res.failure())
-  {
-    return res;
-  }
 
   // Call MPI_Reduce
   MPI_Op mpi_op = GetMPIOp(op);

@@ -36,20 +36,20 @@ MPI_Datatype GetMPIDatatype()
   }
 }
 
-template <typename T>
-ffi::Error handle_aliasing(const T *in_data, T *out_data, int rank, int root)
-{
-  // Check for aliasing (e.g., donation may have triggered)
-  bool is_aliased =
-      (static_cast<const void *>(in_data) == static_cast<const void *>(out_data));
-  if (static_cast<int>(root) == rank && !is_aliased)
-  {
-    // WARNING: For now we throw an error here.
-    // std::memcpy(y_data, x_data, numel * sizeof(T));
-    return ffi::Error::Internal(std::string("TRIED TO COPY"));
-  }
-  return ffi::Error::Success();
-}
+// template <typename T>
+// ffi::Error handle_aliasing(const T *in_data, T *out_data, int rank, int root, int numel)
+// {
+//   // Check for aliasing (e.g., donation may have triggered)
+//   bool is_aliased =
+//       (static_cast<const void *>(in_data) == static_cast<const void *>(out_data));
+//   if (root == rank && !is_aliased)
+//   {
+//     // WARNING: For now we throw an error here.
+//     std::memcpy(in_data, out_data, numel * sizeof(T));
+//     // return ffi::Error::Internal(std::string("TRIED TO COPY"));
+//   }
+//   return ffi::Error::Success();
+// }
 
 ffi::Error handle_mpi_result(int ierr)
 {
@@ -62,6 +62,23 @@ ffi::Error handle_mpi_result(int ierr)
   }
 
   return ffi::Error::Success();
+}
+
+MPI_Op GetMPIOp(int op)
+{
+  switch (op)
+  {
+  case 0:
+    return MPI_SUM;
+  case 1:
+    return MPI_PROD;
+  case 2:
+    return MPI_MIN;
+  case 3:
+    return MPI_MAX;
+  default:
+    throw std::invalid_argument("Invalid reduction op");
+  }
 }
 
 #endif // UTILS_H

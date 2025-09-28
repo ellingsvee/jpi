@@ -18,13 +18,6 @@ ffi::Error AllGatherImpl(int root, int rank, int size, int numel, int sendcount,
   T *x_data = x.typed_data<T>(); // Not const because of MPI_IN_PLACE
   T *y_data = y->typed_data<T>();
 
-  // Check for aliasing
-  ffi::Error res = handle_aliasing(x_data, y_data, rank, root);
-  if (res.failure())
-  {
-    return res;
-  }
-
   // Call MPI_Reduce
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
   int ierr = MPI_Allgather(
