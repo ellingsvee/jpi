@@ -6,14 +6,12 @@ from jpi.mpi import rank, size, root
 
 def _allreduce_impl(x: jax.Array, op: int):
     y_type = jax.ShapeDtypeStruct(x.shape, x.dtype)
-    input_output_aliases = {0: 0}  # alias input and output buffers
 
     # NOTE: The root is unused in Allreduce
     return jax.ffi.ffi_call(
         "allreduce",
         (y_type,),
         vmap_method="sequential",
-        # input_output_aliases=input_output_aliases,
     )(x, root=root, rank=rank, size=size, op=op)[0]
 
 
