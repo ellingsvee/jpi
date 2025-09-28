@@ -1,6 +1,7 @@
 #include "bcast.h"
 #include "reduce.h"
 #include "scatter.h"
+#include "allgather.h"
 #include "nanobind/nanobind.h"
 
 namespace nb = nanobind;
@@ -33,6 +34,16 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Scatter, ScatterDispatch,
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
 );
 
+XLA_FFI_DEFINE_HANDLER_SYMBOL(AllGather, AllGatherDispatch,
+                              ffi::Ffi::Bind()
+                                  .Attr<int64_t>("root")
+                                  .Attr<int64_t>("rank")
+                                  .Attr<int64_t>("size")
+                                  .Attr<int64_t>("sendcount")
+                                  .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Ret<ffi::AnyBuffer>() // Output buffer y
+);
+
 template <typename T>
 nb::capsule EncapsulateFfiHandler(T *fn)
 {
@@ -49,5 +60,6 @@ NB_MODULE(backend, m)
     registrations["bcast"] = EncapsulateFfiHandler(Bcast);
     registrations["reduce"] = EncapsulateFfiHandler(Reduce);
     registrations["scatter"] = EncapsulateFfiHandler(Scatter);
+    registrations["allgather"] = EncapsulateFfiHandler(AllGather);
     return registrations; });
 }
