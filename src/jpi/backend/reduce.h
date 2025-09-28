@@ -10,8 +10,6 @@
 #include "xla/ffi/api/ffi.h"
 namespace ffi = xla::ffi;
 
-// Helper to map integer op to MPI_Op (assumed to be in utils.h, but shown here for completeness)
-// You can expand this with more operations as needed.
 MPI_Op GetMPIOp(int64_t op)
 {
   switch (op)
@@ -33,27 +31,25 @@ template <typename T>
 ffi::Error ReduceImpl(int64_t root, int64_t op, ffi::AnyBuffer x,
                       ffi::Result<ffi::AnyBuffer> y)
 {
+  // Get the rank
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  size_t numel = x.element_count();
-  if (numel != y->element_count())
-  {
-    return ffi::Error::InvalidArgument(
-        "Input and output must have same element count");
-  }
-  T *x_data = x.typed_data<T>();
+  // Get typed data pointers
+  T *x_data = x.typed_data<T>(); // Not const because of MPI_IN_PLACE
   T *y_data = y->typed_data<T>();
 
+  // Check for aliasing
   ffi::Error res = handle_aliasing(x_data, y_data, rank, root);
   if (res.failure())
   {
     return res;
   }
-  // Collective Reduce using the output buffer as the basis
+
+  // Call MPI_Reduce
+  size_t numel = x.element_count();
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
   MPI_Op mpi_op = GetMPIOp(op);
-
   void *sendbuf = (rank == static_cast<int>(root) ? MPI_IN_PLACE : static_cast<void *>(x_data));
   void *recvbuf = y_data;
   int ierr = MPI_Reduce(sendbuf, recvbuf, static_cast<int>(numel), mpi_dtype, mpi_op,
@@ -72,6 +68,13 @@ ffi::Error ReduceImpl(int64_t root, int64_t op, ffi::AnyBuffer x,
 ffi::Error ReduceDispatch(int64_t root, int64_t op, ffi::AnyBuffer x,
                           ffi::Result<ffi::AnyBuffer> y)
 {
+
+  if (x.element_count() != y->element_count())
+  {
+    return ffi::Error::InvalidArgument(
+        "Input and output must have same element count");
+  }
+
   auto dtype = x.element_type();
   ELEMENT_TYPE_DISPATCH(dtype, ReduceImpl, root, op, x, y);
 }

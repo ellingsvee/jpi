@@ -1,23 +1,28 @@
-// #include "csr_spmm.h"
 #include "bcast.h"
 #include "reduce.h"
+#include "scatter.h"
 #include "nanobind/nanobind.h"
 
 namespace nb = nanobind;
 namespace ffi = xla::ffi;
 
-// Register the handler symbol (matches Python ffi_call target)
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Bcast, BcastDispatch,
                               ffi::Ffi::Bind()
                                   .Attr<int64_t>("root")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
 );
-// Register the handler symbol (matches Python ffi_call target)
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Reduce, ReduceDispatch,
                               ffi::Ffi::Bind()
                                   .Attr<int64_t>("root")
                                   .Attr<int64_t>("op")
+                                  .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Ret<ffi::AnyBuffer>() // Output buffer y
+);
+
+XLA_FFI_DEFINE_HANDLER_SYMBOL(Scatter, ScatterDispatch,
+                              ffi::Ffi::Bind()
+                                  .Attr<int64_t>("root")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
 );
@@ -37,5 +42,6 @@ NB_MODULE(backend, m)
     nb::dict registrations;
     registrations["bcast"] = EncapsulateFfiHandler(Bcast);
     registrations["reduce"] = EncapsulateFfiHandler(Reduce);
+    registrations["scatter"] = EncapsulateFfiHandler(Scatter);
     return registrations; });
 }

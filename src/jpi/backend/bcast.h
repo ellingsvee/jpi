@@ -17,16 +17,11 @@ template <typename T>
 ffi::Error BcastImpl(int64_t root, ffi::AnyBuffer x,
                      ffi::Result<ffi::AnyBuffer> y)
 {
+  // Get the rank
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  size_t numel = x.element_count();
-  if (numel != y->element_count())
-  {
-    return ffi::Error::InvalidArgument(
-        "Input and output must have same element count");
-  }
-
+  // Get typed data pointers
   const T *x_data = x.typed_data<T>();
   T *y_data = y->typed_data<T>();
 
@@ -37,7 +32,8 @@ ffi::Error BcastImpl(int64_t root, ffi::AnyBuffer x,
     return res;
   }
 
-  // Collective Bcast on the output buffer
+  // Call MPI_Bcast
+  size_t numel = x.element_count();
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
   int ierr = MPI_Bcast(y_data, static_cast<int>(numel), mpi_dtype,
                        static_cast<int>(root), MPI_COMM_WORLD);
@@ -55,6 +51,13 @@ ffi::Error BcastImpl(int64_t root, ffi::AnyBuffer x,
 ffi::Error BcastDispatch(int64_t root, ffi::AnyBuffer x,
                          ffi::Result<ffi::AnyBuffer> y)
 {
+
+  if (x.element_count() != y->element_count())
+  {
+    return ffi::Error::InvalidArgument(
+        "Input and output must have same element count");
+  }
+
   auto dtype = x.element_type();
   ELEMENT_TYPE_DISPATCH(dtype, BcastImpl, root, x, y);
 }
