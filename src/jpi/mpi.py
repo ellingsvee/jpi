@@ -1,5 +1,6 @@
 from mpi4py import MPI
 
-rank = MPI.COMM_WORLD.Get_rank()
-size = MPI.COMM_WORLD.Get_size()
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
 root = 0  # Default root process
