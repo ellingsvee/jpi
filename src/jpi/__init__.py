@@ -2,6 +2,7 @@ import jax
 from jpi import backend
 from jpi.interface import bcast
 
+
 jax.config.update("jax_enable_x64", True)
 
 # Register FFI targets

@@ -9,12 +9,16 @@ namespace ffi = xla::ffi;
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Bcast, BcastDispatch,
                               ffi::Ffi::Bind()
                                   .Attr<int64_t>("root")
+                                  .Attr<int64_t>("rank")
+                                  .Attr<int64_t>("size")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
 );
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Reduce, ReduceDispatch,
                               ffi::Ffi::Bind()
                                   .Attr<int64_t>("root")
+                                  .Attr<int64_t>("rank")
+                                  .Attr<int64_t>("size")
                                   .Attr<int64_t>("op")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
@@ -23,6 +27,8 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Reduce, ReduceDispatch,
 XLA_FFI_DEFINE_HANDLER_SYMBOL(Scatter, ScatterDispatch,
                               ffi::Ffi::Bind()
                                   .Attr<int64_t>("root")
+                                  .Attr<int64_t>("rank")
+                                  .Attr<int64_t>("size")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
 );

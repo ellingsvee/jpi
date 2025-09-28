@@ -51,4 +51,17 @@ ffi::Error handle_aliasing(const T *in_data, T *out_data, int rank, int root)
   return ffi::Error::Success();
 }
 
+ffi::Error handle_mpi_result(int ierr)
+{
+  if (ierr != MPI_SUCCESS)
+  {
+    char errstr[MPI_MAX_ERROR_STRING];
+    int len;
+    MPI_Error_string(ierr, errstr, &len);
+    return ffi::Error::Internal(std::string("MPI_Bcast failed: ") + errstr);
+  }
+
+  return ffi::Error::Success();
+}
+
 #endif // UTILS_H

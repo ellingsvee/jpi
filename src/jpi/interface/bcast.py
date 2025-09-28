@@ -1,5 +1,6 @@
 from functools import partial
 import jax
+from jpi.mpi import rank, size
 
 
 def _bcast_impl(x: jax.Array, root: int):
@@ -10,11 +11,10 @@ def _bcast_impl(x: jax.Array, root: int):
         (y_type,),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x, root=root)[0]  # Unpacking the tuple at the end
+    )(x, root=root, rank=rank, size=size)[0]  # Unpacking the tuple at the end
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(1,))
-@partial(jax.jit, static_argnums=(1,), donate_argnums=(0,))
 def bcast(x: jax.Array, root: int):
     return _bcast_impl(x, root)
 

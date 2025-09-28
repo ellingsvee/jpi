@@ -1,8 +1,7 @@
 from functools import partial
 import jax
-import jax.numpy as jnp
 from jpi.interface.bcast import _bcast_impl
-from mpi4py import MPI
+from jpi.mpi import rank, size
 
 
 def _reduce_impl(x: jax.Array, root: int, op: int):
@@ -13,12 +12,11 @@ def _reduce_impl(x: jax.Array, root: int, op: int):
         (y_type,),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x, root=root, op=op)[0]  # Unpacking the tuple at the end
+    )(x, root=root, rank=rank, size=size, op=op)[0]  # Unpacking the tuple at the end
     return out
 
 
 @partial(jax.custom_vjp, nondiff_argnums=(1, 2))
-@partial(jax.jit, static_argnums=(1, 2))
 def reduce(x: jax.Array, root: int, op: int):
     return _reduce_impl(x, root, op)
 

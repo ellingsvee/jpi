@@ -14,13 +14,9 @@
 namespace ffi = xla::ffi;
 
 template <typename T>
-ffi::Error BcastImpl(int64_t root, ffi::AnyBuffer x,
+ffi::Error BcastImpl(int root, int rank, int size, int numel, ffi::AnyBuffer x,
                      ffi::Result<ffi::AnyBuffer> y)
 {
-  // Get the rank
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
   // Get typed data pointers
   const T *x_data = x.typed_data<T>();
   T *y_data = y->typed_data<T>();
@@ -33,33 +29,37 @@ ffi::Error BcastImpl(int64_t root, ffi::AnyBuffer x,
   }
 
   // Call MPI_Bcast
-  size_t numel = x.element_count();
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
-  int ierr = MPI_Bcast(y_data, static_cast<int>(numel), mpi_dtype,
-                       static_cast<int>(root), MPI_COMM_WORLD);
-  if (ierr != MPI_SUCCESS)
-  {
-    char errstr[MPI_MAX_ERROR_STRING];
-    int len;
-    MPI_Error_string(ierr, errstr, &len);
-    return ffi::Error::Internal(std::string("MPI_Bcast failed: ") + errstr);
-  }
+  int ierr = MPI_Bcast(
+      y_data,
+      numel,
+      mpi_dtype,
+      root,
+      MPI_COMM_WORLD);
 
-  return ffi::Error::Success();
+  return handle_mpi_result(ierr);
 }
 
-ffi::Error BcastDispatch(int64_t root, ffi::AnyBuffer x,
+ffi::Error BcastDispatch(int64_t root, int64_t rank, int64_t size, ffi::AnyBuffer x,
                          ffi::Result<ffi::AnyBuffer> y)
 {
 
-  if (x.element_count() != y->element_count())
+  // Check that input and output have same number of elements
+  size_t numel = x.element_count();
+  if (numel != y->element_count())
   {
     return ffi::Error::InvalidArgument(
         "Input and output must have same element count");
   }
 
+  // Cast to int for MPI
+  int root_int = static_cast<int>(root);
+  int rank_int = static_cast<int>(rank);
+  int size_int = static_cast<int>(size);
+  int numel_int = static_cast<int>(numel);
+
   auto dtype = x.element_type();
-  ELEMENT_TYPE_DISPATCH(dtype, BcastImpl, root, x, y);
+  ELEMENT_TYPE_DISPATCH(dtype, BcastImpl, root_int, rank_int, size_int, numel_int, x, y);
 }
 
 #endif // BCAST_H

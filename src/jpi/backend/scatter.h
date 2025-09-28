@@ -11,24 +11,19 @@
 namespace ffi = xla::ffi;
 
 template <typename T>
-ffi::Error ScatterImpl(int64_t root, ffi::AnyBuffer x,
+ffi::Error ScatterImpl(int root, int rank, int size, int numel, ffi::AnyBuffer x,
                        ffi::Result<ffi::AnyBuffer> y)
 {
-  // Get the rank
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-
   // Get typed data pointers
-  T *x_data = x.typed_data<T>(); // Not const because of MPI_IN_PLACE
+  const T *x_data = x.typed_data<T>();
   T *y_data = y->typed_data<T>();
 
-  size_t numel = x.element_count();
+  // Compute recv count. Fail if not divisible.
+  int recv_count = numel / size;
   if (numel % size != 0)
   {
     return ffi::Error::InvalidArgument("Input element count must be divisible by number of processes");
   }
-  int recv_count = numel / size;
 
   // Call MPI_Scatter
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
@@ -39,31 +34,30 @@ ffi::Error ScatterImpl(int64_t root, ffi::AnyBuffer x,
       y_data,
       recv_count,
       mpi_dtype,
-      static_cast<int>(root),
+      root,
       MPI_COMM_WORLD);
 
-  if (ierr != MPI_SUCCESS)
-  {
-    char errstr[MPI_MAX_ERROR_STRING];
-    int len;
-    MPI_Error_string(ierr, errstr, &len);
-    return ffi::Error::Internal(std::string("MPI_Reduce failed: ") + errstr);
-  }
-
-  return ffi::Error::Success();
+  return handle_mpi_result(ierr);
 }
 
-ffi::Error ScatterDispatch(int64_t root, ffi::AnyBuffer x,
+ffi::Error ScatterDispatch(int64_t root, int64_t rank, int64_t size, ffi::AnyBuffer x,
                            ffi::Result<ffi::AnyBuffer> y)
 {
-
-  if (x.element_count() != y->element_count())
+  // Check that input and output have same number of elements
+  size_t numel = x.element_count();
+  if (numel != y->element_count())
   {
     return ffi::Error::InvalidArgument(
         "Input and output must have same element count");
   }
 
+  // Cast to int for MPI
+  int root_int = static_cast<int>(root);
+  int rank_int = static_cast<int>(rank);
+  int size_int = static_cast<int>(size);
+  int numel_int = static_cast<int>(numel);
+
   auto dtype = x.element_type();
-  ELEMENT_TYPE_DISPATCH(dtype, ScatterImpl, root, x, y);
+  ELEMENT_TYPE_DISPATCH(dtype, ScatterImpl, root_int, rank_int, size_int, numel_int, x, y);
 }
 #endif // SCATTER_H
