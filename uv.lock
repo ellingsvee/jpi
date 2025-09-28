@@ -70,9 +70,7 @@ dependencies = [
     { name = "jax" },
     { name = "mpi4py" },
     { name = "nanobind" },
-    { name = "numpy" },
     { name = "pytest" },
-    { name = "scipy" },
 ]
 
 [package.dev-dependencies]
@@ -85,9 +83,7 @@ requires-dist = [
     { name = "jax", specifier = ">=0.7.2" },
     { name = "mpi4py", specifier = ">=4.1.0" },
     { name = "nanobind", specifier = ">=2.9.2" },
-    { name = "numpy", specifier = ">=2.3.3" },
     { name = "pytest", specifier = ">=8.4.2" },
-    { name = "scipy", specifier = ">=1.16.2" },
 ]
 
 [package.metadata.requires-dev]
