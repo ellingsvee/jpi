@@ -1,7 +1,7 @@
 from functools import partial
 import jax
 import jax.numpy as jnp
-from jpi.mpi import rank, size
+from jpi.mpi import rank, size, root
 
 
 def _allgather_impl(x: jax.Array):
@@ -15,13 +15,13 @@ def _allgather_impl(x: jax.Array):
     y_type = jax.ShapeDtypeStruct(x_full.shape, x_full.dtype)
     input_output_aliases = {0: 0}  # alias input and output buffers
 
-    # NOTE: The root is unused in Allgather
+    # NOTE: The root is unused in Allgather. Just use the default root=0.
     return jax.ffi.ffi_call(
         "allgather",
         (y_type,),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x_full, root=0, rank=rank, size=size, sendcount=sendcount)[0]
+    )(x_full, root=root, rank=rank, size=size, sendcount=sendcount)[0]
 
 
 @partial(jax.custom_vjp)
