@@ -1,7 +1,10 @@
 from functools import partial
 import jax
 import jax.numpy as jnp
-from jpi.mpi import rank, size, root
+
+# from jpi.mpi import rank, size, root
+from jpi.comm import get_default_comm
+from jpi.utils import wrap_as_hashable
 
 
 def _allgather_impl(x: jax.Array):
@@ -25,7 +28,12 @@ def _allgather_impl(x: jax.Array):
 
 
 @partial(jax.custom_vjp)
-def allgather(x: jax.Array):
+def allgather(x: jax.Array, *, comm=None):
+    if comm is None:
+        comm = get_default_comm()
+
+    comm = wrap_as_hashable(comm)
+
     return _allgather_impl(x)
 
 
