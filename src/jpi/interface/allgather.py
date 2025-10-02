@@ -2,13 +2,12 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from jpi.mpi import rank, size, root
+from jpi.mpi import rank, size
 from jpi.comm import get_default_comm
-from jpi.utils import wrap_as_hashable
 from jpi.interface.token import _token_manager
 
 
-def _allgather_impl(x: jax.Array, token: jax.Array):
+def _allgather_impl(x: jax.Array, token: jax.Array, comm):
     # The input and output of the ffi_call must have the same shape and dtype
     # since we are aliasing them. For allgather, the output shape is (size * x.shape[0], ...).
     # Therefore we need to expand the input x.
@@ -26,40 +25,30 @@ def _allgather_impl(x: jax.Array, token: jax.Array):
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x_full, token, root=root, rank=rank, size=size, sendcount=sendcount)
+    )(x_full, token, comm_handle=comm.py2f(), sendcount=sendcount)
     return result, token
 
 
-@partial(jax.custom_vjp)
-def allgather(x: jax.Array, *, comm=None):
-    # Get current token
-    token = _token_manager.get_token()
-
+@partial(jax.custom_vjp, nondiff_argnames=["comm"])
+def allgather(x: jax.Array, comm=None):
     if comm is None:
         comm = get_default_comm()
 
-    comm = wrap_as_hashable(comm)
-
-    result, new_token = _allgather_impl(x, token)
-
-    # Update global token
+    token = _token_manager.get_token()
+    result, new_token = _allgather_impl(x, token, comm)
     _token_manager.update_token(new_token)
+
     return result
 
 
 def allgather_fwd(x: jax.Array, *, comm=None):
-    # Get current token
-    token = _token_manager.get_token()
-
     if comm is None:
         comm = get_default_comm()
 
-    comm = wrap_as_hashable(comm)
-
-    result, new_token = _allgather_impl(x, token)
-
-    # Update global token
+    token = _token_manager.get_token()
+    result, new_token = _allgather_impl(x, token, comm)
     _token_manager.update_token(new_token)
+
     return result, (x.shape[0],)
 
 

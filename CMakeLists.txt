@@ -23,6 +23,7 @@ nanobind_add_module(backend MODULE
     src/jpi/backend/utils.h
     src/jpi/backend/allgather.h
     src/jpi/backend/allreduce.h
+    src/jpi/backend/barrier.h
 )
 target_include_directories("backend" PUBLIC ${XLA_DIR} ${MPI_INCLUDE_PATH})
 target_link_libraries(backend PRIVATE MPI::MPI_CXX)

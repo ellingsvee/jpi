@@ -11,11 +11,16 @@
 namespace ffi = xla::ffi;
 
 template <typename T>
-ffi::Error AllGatherImpl(int root, int rank, int size, int numel, int sendcount,
+ffi::Error AllGatherImpl(MPI_Comm comm, int numel, int sendcount,
                          ffi::AnyBuffer x, ffi::AnyBuffer token,
                          ffi::Result<ffi::AnyBuffer> y,
                          ffi::Result<ffi::AnyBuffer> token_out)
 {
+  // Get rank and size from communicator
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
   // Get typed data pointers
   T *x_data = x.typed_data<T>(); // Not const because of MPI_IN_PLACE
   T *y_data = y->typed_data<T>();
@@ -29,13 +34,12 @@ ffi::Error AllGatherImpl(int root, int rank, int size, int numel, int sendcount,
   // Call MPI_Reduce
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
   int ierr = MPI_Allgather(
-      (rank == root) ? MPI_IN_PLACE : static_cast<void *>(x_data), sendcount,
-      mpi_dtype, y_data, sendcount, mpi_dtype, MPI_COMM_WORLD);
+      static_cast<void *>(x_data), sendcount,
+      mpi_dtype, y_data, sendcount, mpi_dtype, comm);
   return handle_mpi_result(ierr);
 }
 
-ffi::Error AllGatherDispatch(int64_t root, int64_t rank, int64_t size,
-                             int64_t sendcount, ffi::AnyBuffer x,
+ffi::Error AllGatherDispatch(int64_t comm_handle, int64_t sendcount, ffi::AnyBuffer x,
                              ffi::AnyBuffer token,
                              ffi::Result<ffi::AnyBuffer> y,
                              ffi::Result<ffi::AnyBuffer> token_out)
@@ -56,14 +60,16 @@ ffi::Error AllGatherDispatch(int64_t root, int64_t rank, int64_t size,
   }
 
   // Cast to int for MPI
-  int root_int = static_cast<int>(root);
-  int rank_int = static_cast<int>(rank);
-  int size_int = static_cast<int>(size);
+  // int root_int = static_cast<int>(root);
+  // int rank_int = static_cast<int>(rank);
+  // int size_int = static_cast<int>(size);
   int numel_int = static_cast<int>(numel);
   int sendcount_int = static_cast<int>(sendcount);
 
+  // Convert handle to MPI_Comm
+  MPI_Comm comm = MPI_Comm_f2c(static_cast<MPI_Fint>(comm_handle));
+
   auto dtype = x.element_type();
-  ELEMENT_TYPE_DISPATCH(dtype, AllGatherImpl, root_int, rank_int, size_int,
-                        numel_int, sendcount_int, x, token, y, token_out);
+  ELEMENT_TYPE_DISPATCH(dtype, AllGatherImpl, comm, numel_int, sendcount_int, x, token, y, token_out);
 }
 #endif // ALLGATHER_H

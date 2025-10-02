@@ -11,15 +11,19 @@
 namespace ffi = xla::ffi;
 
 template <typename T>
-ffi::Error AllReduceImpl(int root, int rank, int size, int numel, int op, ffi::AnyBuffer x,
-                         ffi::Result<ffi::AnyBuffer> y)
+ffi::Error AllReduceImpl(MPI_Comm comm, MPI_Op op, int numel, ffi::AnyBuffer x, ffi::AnyBuffer token,
+                         ffi::Result<ffi::AnyBuffer> y, ffi::Result<ffi::AnyBuffer> token_out)
 {
   // Get typed data pointers
   T *x_data = x.typed_data<T>(); // Not const because of MPI_IN_PLACE
   T *y_data = y->typed_data<T>();
 
+  // Token is a dummy buffer, just alias input to output
+  int32_t *token_data = token.typed_data<int32_t>();
+  int32_t *token_out_data = token_out->typed_data<int32_t>();
+  *token_out_data = *token_data; // Copy token to output (no-op in practice due to aliasing)
+
   // Call MPI_Reduce
-  MPI_Op mpi_op = GetMPIOp(op);
   MPI_Datatype mpi_dtype = GetMPIDatatype<T>();
 
   int ierr = MPI_Allreduce(
@@ -27,14 +31,14 @@ ffi::Error AllReduceImpl(int root, int rank, int size, int numel, int op, ffi::A
       y_data,
       numel,
       mpi_dtype,
-      mpi_op,
-      MPI_COMM_WORLD);
+      op,
+      comm);
 
   return handle_mpi_result(ierr);
 }
 
-ffi::Error AllReduceDispatch(int64_t root, int64_t rank, int64_t size, int64_t op, ffi::AnyBuffer x,
-                             ffi::Result<ffi::AnyBuffer> y)
+ffi::Error AllReduceDispatch(int64_t comm_handle, int64_t op_handle, ffi::AnyBuffer x, ffi::AnyBuffer token,
+                             ffi::Result<ffi::AnyBuffer> y, ffi::Result<ffi::AnyBuffer> token_out)
 {
 
   // Check that input and output have same number of elements
@@ -45,14 +49,20 @@ ffi::Error AllReduceDispatch(int64_t root, int64_t rank, int64_t size, int64_t o
         "Input and output must have same element count");
   }
 
+  // Check token shapes
+  if (token.element_count() != 1 || token_out->element_count() != 1)
+  {
+    return ffi::Error::InvalidArgument("Token must be a scalar");
+  }
+
   // Cast to int for MPI
-  int root_int = static_cast<int>(root);
-  int rank_int = static_cast<int>(rank);
-  int size_int = static_cast<int>(size);
   int numel_int = static_cast<int>(numel);
-  int op_int = static_cast<int>(op);
+
+  // Convert handle to MPI_Comm
+  MPI_Comm comm = MPI_Comm_f2c(static_cast<MPI_Fint>(comm_handle));
+  MPI_Op op = MPI_Op_f2c(static_cast<MPI_Fint>(op_handle));
 
   auto dtype = x.element_type();
-  ELEMENT_TYPE_DISPATCH(dtype, AllReduceImpl, root_int, rank_int, size_int, numel_int, op_int, x, y);
+  ELEMENT_TYPE_DISPATCH(dtype, AllReduceImpl, comm, op, numel_int, x, token, y, token_out);
 }
 #endif // ALLREDUCE_H
