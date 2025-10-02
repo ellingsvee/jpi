@@ -1,6 +1,9 @@
+import hashlib
 from mpi4py import MPI as _MPI
 
 import numpy as _np
+
+from jpi.jax_compat import EffectType, register_effect
 
 
 # from .jax_compat import token_type, register_effect, EffectType
@@ -10,23 +13,23 @@ import numpy as _np
 NOTSET = object()
 
 
-# class MPIEffect(EffectType):
-#     def __hash__(self):
-#         # enforce a constant (known) hash
-#         return int(hashlib.md5("I love mpi4jax".encode("utf-8")).hexdigest(), 16)
-#
-#
-# class OrderedMPIEffect(EffectType):
-#     def __hash__(self):
-#         # enforce a constant (known) hash
-#         return int(
-#             hashlib.md5("I love mpi4jax very much".encode("utf-8")).hexdigest(), 16
-#         )
-#
-#
-# effect = register_effect(MPIEffect)
-# ordered_effect = register_effect(OrderedMPIEffect, ordered=True)
-#
+class MPIEffect(EffectType):
+    def __hash__(self):
+        # enforce a constant (known) hash
+        return int(hashlib.md5("I love mpi4jax".encode("utf-8")).hexdigest(), 16)
+
+
+class OrderedMPIEffect(EffectType):
+    def __hash__(self):
+        # enforce a constant (known) hash
+        return int(
+            hashlib.md5("I love mpi4jax very much".encode("utf-8")).hexdigest(), 16
+        )
+
+
+effect = register_effect(MPIEffect)
+ordered_effect = register_effect(OrderedMPIEffect, ordered=True)
+
 
 # def default_primitive_impl(primitive):
 #     return functools.partial(xla.apply_primitive, primitive)

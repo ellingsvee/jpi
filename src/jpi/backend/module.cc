@@ -1,9 +1,9 @@
-#include "bcast.h"
-#include "reduce.h"
-#include "scatter.h"
 #include "allgather.h"
 #include "allreduce.h"
+#include "bcast.h"
 #include "nanobind/nanobind.h"
+#include "reduce.h"
+#include "scatter.h"
 
 namespace nb = nanobind;
 namespace ffi = xla::ffi;
@@ -42,7 +42,9 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(AllGather, AllGatherDispatch,
                                   .Attr<int64_t>("size")
                                   .Attr<int64_t>("sendcount")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Arg<ffi::AnyBuffer>() // Input token
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
+                                  .Ret<ffi::AnyBuffer>() // Output token
 );
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(AllReduce, AllReduceDispatch,
@@ -55,23 +57,20 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(AllReduce, AllReduceDispatch,
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
 );
 
-template <typename T>
-nb::capsule EncapsulateFfiHandler(T *fn)
-{
-    static_assert(std::is_invocable_r_v<XLA_FFI_Error *, T, XLA_FFI_CallFrame *>,
-                  "Encapsulated function must be and XLA FFI handler");
-    return nb::capsule(reinterpret_cast<void *>(fn));
+template <typename T> nb::capsule EncapsulateFfiHandler(T *fn) {
+  static_assert(std::is_invocable_r_v<XLA_FFI_Error *, T, XLA_FFI_CallFrame *>,
+                "Encapsulated function must be and XLA FFI handler");
+  return nb::capsule(reinterpret_cast<void *>(fn));
 }
 
-NB_MODULE(backend, m)
-{
-    m.def("registrations", []()
-          {
+NB_MODULE(backend, m) {
+  m.def("registrations", []() {
     nb::dict registrations;
     registrations["bcast"] = EncapsulateFfiHandler(Bcast);
     registrations["reduce"] = EncapsulateFfiHandler(Reduce);
     registrations["scatter"] = EncapsulateFfiHandler(Scatter);
     registrations["allgather"] = EncapsulateFfiHandler(AllGather);
     registrations["allreduce"] = EncapsulateFfiHandler(AllReduce);
-    return registrations; });
+    return registrations;
+  });
 }
