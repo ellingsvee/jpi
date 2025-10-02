@@ -2,7 +2,16 @@ import time
 import sys
 import jax
 import jax.numpy as jnp
-from jpi.mpi import rank, comm
+
+# from jpi.mpi import rank, comm
+from jpi.interface.barrier import barrier
+from jpi.interface.token import gen_token
+
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
 
 
 def input_array():
@@ -31,7 +40,8 @@ def function_to_be_jitted(x):
 
     # --- The Barrier Call ---
     print(f"Rank {rank}: Reached the barrier. Waiting...")
-    comm.barrier()
+    token = gen_token()
+    token = barrier(token, comm=comm)
     # This code block will only start after the longest process (Rank 1) is finished.
     print(f"Rank {rank}: Passed the barrier. All processes are now synchronized.")
 
@@ -41,7 +51,8 @@ def function_to_be_jitted(x):
 
 if __name__ == "__main__":
     print("Starting the JAX MPI example...")
-    comm.barrier()  # Initial barrier to sync before starting
+    token = gen_token()
+    barrier(token, comm=comm)  # Initial barrier to sync before starting
     print(f"Rank {rank}: All processes synchronized at start.")
 
     x = input_array()

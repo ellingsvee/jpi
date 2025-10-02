@@ -22,3 +22,7 @@ class _TokenManager:
 
 # Global token manager instance
 _token_manager = _TokenManager()
+
+
+def gen_token():
+    return jnp.zeros((), dtype=jnp.float32)

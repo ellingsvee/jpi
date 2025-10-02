@@ -1,11 +1,6 @@
 from functools import partial
 import jax
-from jpi.interface.bcast import _bcast_impl
-from jpi.interface.token import _token_manager
 from jpi.comm import get_default_comm
-from jpi.utils import wrap_as_hashable, unpack_hashable
-
-from mpi4py import MPI
 
 
 def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
@@ -16,7 +11,6 @@ def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
     input_output_aliases = {1: 1}  # alias input and output buffers
 
-    # NOTE: The root is unused in Allreduce
     result, token = jax.ffi.ffi_call(
         "allreduce",
         (y_type, token_type),
@@ -27,29 +21,26 @@ def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
 
 
 @partial(jax.custom_vjp, nondiff_argnames=["op", "comm"])
-def allreduce(x: jax.Array, op, comm=None):
+def allreduce(x: jax.Array, token: jax.Array, op, comm=None):
     if comm is None:
         comm = get_default_comm()
 
-    token = _token_manager.get_token()
+    # token = _token_manager.get_token()
     result, new_token = _allreduce_impl(x, token, comm, op)
-    _token_manager.update_token(new_token)
-    return result
+    # _token_manager.update_token(new_token)
+    return result, new_token
 
 
-def allreduce_fwd(x: jax.Array, op, comm=None):
+def allreduce_fwd(x, token, op, comm=None):
     if comm is None:
         comm = get_default_comm()
-
-    token = _token_manager.get_token()
     result, new_token = _allreduce_impl(x, token, comm, op)
-    _token_manager.update_token(new_token)
-    return result, (x, op)
+    # residual should be things needed by backward; keep small
+    return (result, new_token), (op,)
 
 
-def allreduce_bwd(op: int, res: tuple, g: jax.Array):
-    x, op = res
-
+def allreduce_bwd(op, res, g):
+    # implement gradient logic when you need it
     raise NotImplementedError("Backward pass for allreduce is not implemented yet.")
     # if op == MPI.SUM:  # MPI_SUM
     #     # For sum, gradient is broadcast from root to all ranks

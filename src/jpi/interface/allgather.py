@@ -19,7 +19,6 @@ def _allgather_impl(x: jax.Array, token: jax.Array, comm):
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
     input_output_aliases = {0: 0, 1: 1}  # alias input and output buffers
 
-    # NOTE: The root is unused in Allgather. Just use the default root=0.
     result, token = jax.ffi.ffi_call(
         "allgather",
         (y_type, token_type),

@@ -1,8 +1,6 @@
 from functools import partial
 import jax
-import jax.numpy as jnp
 
-from jpi.mpi import rank, size
 from jpi.comm import get_default_comm
 from jpi.interface.token import _token_manager
 
