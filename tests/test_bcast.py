@@ -1,8 +1,13 @@
 import pytest
-import jax
+
 import jax.numpy as jnp
+from jax._src.typing import DTypeLike
+
+from jpi.interface.token import gen_token
 from jpi.interface.bcast import bcast
-from jpi.mpi import rank
+
+from jpi.testing_utils import generate_array
+
 
 from mpi4py import MPI
 
@@ -11,19 +16,26 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 
-def input_array():
-    if rank == 0:
-        return jnp.arange(5, dtype=jnp.float32)
+@pytest.mark.mpi(min_size=2)
+def test_allgather(
+    array_shape: tuple,
+    dtype: DTypeLike,
+):
+    root = 0
+    arr = generate_array(array_shape, dtype)
+
+    if rank == root:
+        x = arr
     else:
-        return jnp.zeros(5, dtype=jnp.float32)
+        x = jnp.empty_like(arr)
+
+    token = gen_token()
+    y, _ = bcast(x, token, root, comm=comm)
+
+    if rank != root:
+        assert jnp.allclose(arr, y)
 
 
-if __name__ == "__main__":
-    x = input_array()
-    print(f"- Rank {rank} before bcast: x = {x}")
-    y = bcast(x, root=0)
-    print(f"- Rank {rank} after bcast: y = {y}")
-
-    grad_fn = jax.grad(lambda x: jnp.sum(bcast(x, root=0)))
-    grad = grad_fn(input_array())
-    print(f"- Rank {rank} after bcast_grad: grad = {grad}")
+# if __name__ == "__main__":
+#     test_allgather((5,), dtype=jnp.float64)
+#     print("success!")
