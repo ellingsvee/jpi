@@ -24,10 +24,7 @@ def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
 def allreduce(x: jax.Array, token: jax.Array, op, comm=None):
     if comm is None:
         comm = get_default_comm()
-
-    # token = _token_manager.get_token()
     result, new_token = _allreduce_impl(x, token, comm, op)
-    # _token_manager.update_token(new_token)
     return result, new_token
 
 
@@ -35,32 +32,11 @@ def allreduce_fwd(x, token, op, comm=None):
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allreduce_impl(x, token, comm, op)
-    # residual should be things needed by backward; keep small
     return (result, new_token), (op,)
 
 
 def allreduce_bwd(op, res, g):
-    # implement gradient logic when you need it
     raise NotImplementedError("Backward pass for allreduce is not implemented yet.")
-    # if op == MPI.SUM:  # MPI_SUM
-    #     # For sum, gradient is broadcast from root to all ranks
-    #     return (_bcast_impl(g, 0),)
-    # elif op == 1:  # MPI_PROD
-    #     # For product, gradient is y / x_i (on each rank)
-    #     y = _reduce_impl(x, root, op)
-    #     # Broadcast y to all ranks to compute gradient
-    #     y = _bcast_impl(y, root)
-    #     grad = jnp.where(x != 0, y / x, 0)  # Avoid division by zero
-    #     return (grad,)
-    # elif op in (2, 3):  # MPI_MIN, MPI_MAX
-    #     # For min/max, gradient is 1 where x is min/max, 0 elsewhere
-    #     y = _reduce_impl(x, root, op)
-    #     # Broadcast y to all ranks
-    #     y = _bcast_impl(y, root)
-    #     grad = jnp.where(x == y, 1.0, 0.0)
-    #     return (grad,)
-    # else:
-    #     raise ValueError(f"Unsupported op: {op}")
 
 
 allreduce.defvjp(allreduce_fwd, allreduce_bwd)

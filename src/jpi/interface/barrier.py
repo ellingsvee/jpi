@@ -22,10 +22,7 @@ def _barrier_impl(token: jax.Array, comm):
 def barrier(token: jax.Array, comm=None):
     if comm is None:
         comm = get_default_comm()
-
-    # token = _token_manager.get_token()
     new_token = _barrier_impl(token, comm)
-    # _token_manager.update_token(new_token)
     return new_token
 
 
