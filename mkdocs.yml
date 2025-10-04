@@ -84,5 +84,5 @@ markdown_extensions:
 nav:
   - Home: index.md
   - User Guide:
-    - Installation: user-guide/installation.md
+    # - Installation: user-guide/installation.md
   - API Reference: reference/
