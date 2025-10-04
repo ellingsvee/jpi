@@ -30,13 +30,15 @@ jobs:
           restore-keys: |
             mkdocs-material-
 
-      # Install your project with dependencies from pyproject.toml
-      - name: Install dependencies
+      - name: Install MkDocs and plugins
         run: |
           pip install --upgrade pip
-          pip install .  # installs from pyproject.toml
-          # optionally include dev dependencies too:
-          # pip install .[dev]
+          pip install \
+            mkdocs-material \
+            mkdocs-gen-files \
+            mkdocs-literate-nav \
+            mkdocs-section-index \
+            "mkdocstrings[python]"
 
-      # Build and deploy docs
-      - run: mkdocs gh-deploy --force
+      - name: Deploy docs
+        run: mkdocs gh-deploy --force
