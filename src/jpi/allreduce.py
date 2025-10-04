@@ -49,8 +49,7 @@ def allreduce(x: jax.Array, token: jax.Array, op, comm=None):
     Example:
         ``` python
         import jax.numpy as jnp
-        from jpi.interface import allreduce
-        from jpi.interface.token import gen_token
+        from jpi import allreduce, gen_token
         from mpi4py import MPI
 
         # Sum arrays across all processes

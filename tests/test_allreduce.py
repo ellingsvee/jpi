@@ -5,8 +5,8 @@ from jax import grad, jit
 import jax.numpy as jnp
 from jax._src.typing import DTypeLike
 
-from jpi.interface.token import gen_token
-from jpi.interface.allreduce import allreduce
+from jpi import gen_token
+from jpi import allreduce
 
 from testing_utils import generate_array
 

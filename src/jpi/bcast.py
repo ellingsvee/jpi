@@ -37,8 +37,7 @@ def bcast(x: jax.Array, token: jax.Array, root, comm=None):
     Example:
         ```python
         import jax.numpy as jnp
-        from jpi.interface import bcast
-        from jpi.interface.token import gen_token
+        from jpi import bcast, gen_token
 
         # On rank 0: broadcast this data
         if rank == 0:

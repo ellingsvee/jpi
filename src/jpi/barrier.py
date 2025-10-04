@@ -32,8 +32,7 @@ def barrier(token: jax.Array, comm=None):
     Example:
         ```python
         import jax.numpy as jnp
-        from jpi.interface import barrier
-        from jpi.interface.token import gen_token
+        from jpi import barrier, gen_token
 
         # Ensure all processes reach this point before continuing
         token = gen_token()

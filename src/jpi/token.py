@@ -1,8 +1,9 @@
 # Internal token for ordering MPI operations
 import jax.numpy as jnp
+import jax
 
 
-def gen_token():
+def gen_token() -> jax.Array:
     """Generate a synchronization token for MPI operations.
 
     Returns:
@@ -13,8 +14,7 @@ def gen_token():
 
     Example:
         ```python
-        from jpi.interface.token import gen_token
-        from jpi.interface import bcast, allreduce
+        from jpi import bcast, allreduce, gen_token
 
         # Create initial token
         token = gen_token()

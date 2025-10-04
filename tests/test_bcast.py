@@ -4,8 +4,8 @@ from jax import grad, jit
 import jax.numpy as jnp
 from jax._src.typing import DTypeLike
 
-from jpi.interface.token import gen_token
-from jpi.interface.bcast import bcast
+from jpi import gen_token
+from jpi import bcast
 
 from testing_utils import generate_array
 

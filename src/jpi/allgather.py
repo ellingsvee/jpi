@@ -42,8 +42,8 @@ def allgather(x: jax.Array, token: jax.Array, comm=None):
     Example:
         ```python
         import jax.numpy as jnp
-        from jpi.interface import allgather
-        from jpi.interface.token import gen_token
+        from jpi import allgather
+        from jpi import gen_token
 
         # Each rank contributes different data
         local_data = jnp.array([rank, rank + 1])  # rank-specific data

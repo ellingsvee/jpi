@@ -24,8 +24,7 @@ All operations are designed to work seamlessly with JAX's compilation and differ
 import jax
 import jax.numpy as jnp
 from mpi4py import MPI
-from jpi.interface import allreduce, bcast
-from jpi.interface.token import make_token
+from jpi import allreduce, bcast, gen_token
 
 # Create some data
 x = jnp.array([1.0, 2.0, 3.0])

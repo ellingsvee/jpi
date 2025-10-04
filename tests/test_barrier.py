@@ -5,8 +5,8 @@ from jax import jit, grad
 import jax.numpy as jnp
 from jax._src.typing import DTypeLike
 
-from jpi.interface.token import gen_token
-from jpi.interface.barrier import barrier
+from jpi import gen_token
+from jpi import barrier
 
 
 comm = MPI.COMM_WORLD
