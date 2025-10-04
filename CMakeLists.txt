@@ -17,13 +17,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # This does not work
 
 nanobind_add_module(backend MODULE
     src/jpi/backend/module.cc
-    src/jpi/backend/bcast.h
-    src/jpi/backend/reduce.h
-    src/jpi/backend/scatter.h
-    src/jpi/backend/utils.h
-    src/jpi/backend/allgather.h
-    src/jpi/backend/allreduce.h
-    src/jpi/backend/barrier.h
 )
 target_include_directories("backend" PUBLIC ${XLA_DIR} ${MPI_INCLUDE_PATH})
 target_link_libraries(backend PRIVATE MPI::MPI_CXX)

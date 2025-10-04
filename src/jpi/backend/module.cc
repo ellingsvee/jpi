@@ -2,8 +2,6 @@
 #include "allreduce.h"
 #include "bcast.h"
 #include "nanobind/nanobind.h"
-#include "reduce.h"
-#include "scatter.h"
 #include "barrier.h"
 
 namespace nb = nanobind;
@@ -17,24 +15,6 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Bcast, BcastDispatch,
                                   .Arg<ffi::AnyBuffer>() // Input token
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
                                   .Ret<ffi::AnyBuffer>() // Output token
-);
-XLA_FFI_DEFINE_HANDLER_SYMBOL(Reduce, ReduceDispatch,
-                              ffi::Ffi::Bind()
-                                  .Attr<int64_t>("root")
-                                  .Attr<int64_t>("rank")
-                                  .Attr<int64_t>("size")
-                                  .Attr<int64_t>("op")
-                                  .Arg<ffi::AnyBuffer>() // Input buffer x
-                                  .Ret<ffi::AnyBuffer>() // Output buffer y
-);
-
-XLA_FFI_DEFINE_HANDLER_SYMBOL(Scatter, ScatterDispatch,
-                              ffi::Ffi::Bind()
-                                  .Attr<int64_t>("root")
-                                  .Attr<int64_t>("rank")
-                                  .Attr<int64_t>("size")
-                                  .Arg<ffi::AnyBuffer>() // Input buffer x
-                                  .Ret<ffi::AnyBuffer>() // Output buffer y
 );
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(AllGather, AllGatherDispatch,
@@ -81,8 +61,6 @@ NB_MODULE(backend, m)
           {
     nb::dict registrations;
     registrations["bcast"] = EncapsulateFfiHandler(Bcast);
-    registrations["reduce"] = EncapsulateFfiHandler(Reduce);
-    registrations["scatter"] = EncapsulateFfiHandler(Scatter);
     registrations["allgather"] = EncapsulateFfiHandler(AllGather);
     registrations["allreduce"] = EncapsulateFfiHandler(AllReduce);
     registrations["barrier"] = EncapsulateFfiHandler(Barrier);
