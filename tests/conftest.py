@@ -15,6 +15,8 @@ ARRAY_SHAPE = [
 OP = [
     pytest.param(MPI.SUM, id="MPI.SUM"),
     pytest.param(MPI.PROD, id="MPI.PROD"),
+    pytest.param(MPI.MAX, id="MPI.MAX"),
+    pytest.param(MPI.MIN, id="MPI.MIN"),
 ]
 
 
