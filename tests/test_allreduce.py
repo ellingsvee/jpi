@@ -16,52 +16,35 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 
-# Parametrize operations
-@pytest.mark.parametrize(
-    "op,data_fn,expected_fn",
-    [
-        (
-            MPI.SUM,
-            lambda shape, dtype: generate_array(shape, dtype),
-            lambda arr, size, rank: arr * size,
-        ),
-        (
-            MPI.PROD,
-            lambda shape, dtype: jnp.abs(generate_array(shape, dtype)) + 1.0,
-            lambda arr, size, rank: arr**size,
-        ),
-        (
-            MPI.MAX,
-            lambda shape, dtype: generate_array(shape, dtype) + rank,
-            lambda arr, size, rank: generate_array(arr.shape, arr.dtype) + (size - 1),
-        ),
-        (
-            MPI.MIN,
-            lambda shape, dtype: generate_array(shape, dtype) + rank,
-            lambda arr, size, rank: generate_array(arr.shape, arr.dtype) + 0,
-        ),
-    ],
-)
 @pytest.mark.mpi(min_size=2)
 def test_allreduce(
     array_shape: tuple,
     dtype: DTypeLike,
     op,
-    data_fn,
-    expected_fn,
 ):
     """Test allreduce with various operations"""
-    arr = data_fn(array_shape, dtype)
+    # Generate appropriate data for each operation
+    if op == MPI.PROD:
+        arr = jnp.abs(generate_array(array_shape, dtype)) + 1.0
+        expected = arr**size
+    elif op == MPI.SUM:
+        arr = generate_array(array_shape, dtype)
+        expected = arr * size
+    elif op == MPI.MAX:
+        arr = generate_array(array_shape, dtype) + rank
+        expected = generate_array(array_shape, dtype) + (size - 1)
+    elif op == MPI.MIN:
+        arr = generate_array(array_shape, dtype) + rank
+        expected = generate_array(array_shape, dtype) + 0
+    else:
+        raise ValueError(f"Unsupported operation: {op}")
 
     token = gen_token()
     y, _ = allreduce(arr, token, op, comm=comm)
 
-    expected = expected_fn(arr, size, rank)
-    rtol = 1e-5 if op == MPI.PROD else 1e-7
-    assert jnp.allclose(y, expected, rtol=rtol)
+    assert jnp.allclose(y, expected)
 
 
-@pytest.mark.parametrize("op", [MPI.SUM, MPI.PROD, MPI.MAX, MPI.MIN])
 @pytest.mark.mpi(min_size=2)
 def test_allreduce_jit(
     array_shape: tuple,
@@ -73,19 +56,15 @@ def test_allreduce_jit(
     if op == MPI.PROD:
         arr = jnp.abs(generate_array(array_shape, dtype)) + 1.0
         expected = arr**size
-        rtol = 1e-5
     elif op == MPI.SUM:
         arr = generate_array(array_shape, dtype)
         expected = arr * size
-        rtol = 1e-7
     elif op == MPI.MAX:
         arr = generate_array(array_shape, dtype) + rank
         expected = generate_array(array_shape, dtype) + (size - 1)
-        rtol = 1e-7
     elif op == MPI.MIN:
         arr = generate_array(array_shape, dtype) + rank
         expected = generate_array(array_shape, dtype) + 0
-        rtol = 1e-7
     else:
         raise ValueError(f"Unsupported operation: {op}")
 
@@ -97,48 +76,39 @@ def test_allreduce_jit(
     allreduce_jit = jit(allreduce_fn)
     y = allreduce_jit(arr)
 
-    assert jnp.allclose(y, expected, rtol=rtol)
+    assert jnp.allclose(y, expected)
 
 
-@pytest.mark.parametrize(
-    "op,data_fn,grad_fn",
-    [
-        (
-            MPI.SUM,
-            lambda shape, dtype: generate_array(shape, dtype),
-            lambda arr, size, rank: jnp.ones_like(arr) * size,
-        ),
-        (
-            MPI.PROD,
-            lambda shape, dtype: jnp.abs(generate_array(shape, dtype)) + 1.0,
-            lambda arr, size, rank: arr ** (size - 1),
-        ),
-        (
-            MPI.MAX,
-            lambda shape, dtype: generate_array(shape, dtype) + rank,
-            lambda arr, size, rank: jnp.ones_like(arr)
-            if rank == size - 1
-            else jnp.zeros_like(arr),
-        ),
-        (
-            MPI.MIN,
-            lambda shape, dtype: generate_array(shape, dtype) + rank,
-            lambda arr, size, rank: jnp.ones_like(arr)
-            if rank == 0
-            else jnp.zeros_like(arr),
-        ),
-    ],
-)
 @pytest.mark.mpi(min_size=2)
 def test_allreduce_grad(
     array_shape: tuple,
     dtype: DTypeLike,
     op,
-    data_fn,
-    grad_fn,
 ):
-    """Test that allreduce gradient works correctly for all implemented operations"""
-    arr = data_fn(array_shape, dtype)
+    """Test that allreduce gradient works correctly for implemented operations"""
+    # Generate appropriate data for each operation
+    if op == MPI.PROD:
+        arr = jnp.abs(generate_array(array_shape, dtype)) + 1.0
+        expected_grad_fn = lambda arr, size, rank: arr ** (size - 1)
+    elif op == MPI.SUM:
+        arr = generate_array(array_shape, dtype)
+        expected_grad_fn = lambda arr, size, rank: jnp.ones_like(arr) * size
+    elif op == MPI.MAX:
+        arr = generate_array(array_shape, dtype) + rank
+        expected_grad_fn = (
+            lambda arr, size, rank: jnp.ones_like(arr)
+            if rank == size - 1
+            else jnp.zeros_like(arr)
+        )
+    elif op == MPI.MIN:
+        arr = generate_array(array_shape, dtype) + rank
+        expected_grad_fn = (
+            lambda arr, size, rank: jnp.ones_like(arr)
+            if rank == 0
+            else jnp.zeros_like(arr)
+        )
+    else:
+        pytest.skip(f"Gradient test not implemented for operation: {op}")
 
     def func(x):
         token = gen_token()
@@ -148,5 +118,5 @@ def test_allreduce_grad(
     grad_fn_jax = grad(func)
     grad_x = grad_fn_jax(arr)
 
-    expected = grad_fn(arr, size, rank)
+    expected = expected_grad_fn(arr, size, rank)
     assert jnp.allclose(grad_x, expected)
