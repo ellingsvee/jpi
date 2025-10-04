@@ -27,11 +27,14 @@ def barrier(token: jax.Array, comm=None):
 
 
 def barrier_fwd(token: jax.Array, comm=None):
-    raise NotImplementedError("Backward pass for allreduce is not implemented yet.")
+    if comm is None:
+        comm = get_default_comm()
+    new_token = _barrier_impl(token, comm)
+    return new_token, None
 
 
-def barrier_bwd(comm, res, g):
-    raise NotImplementedError("Backward pass for allreduce is not implemented yet.")
+def barrier_bwd(comm, _, g):
+    return (g,)
 
 
 barrier.defvjp(barrier_fwd, barrier_bwd)

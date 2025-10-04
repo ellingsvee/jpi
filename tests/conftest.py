@@ -1,6 +1,7 @@
 import pytest
 import jax.numpy as jnp
 from jax._src.typing import DTypeLike
+from mpi4py import MPI
 
 DTYPE = [
     pytest.param(jnp.float64, id="float64"),
@@ -11,6 +12,11 @@ ARRAY_SHAPE = [
     pytest.param((5,), id="array_shape=(5,)"),
 ]
 
+OP = [
+    pytest.param(MPI.SUM, id="MPI.SUM"),
+    pytest.param(MPI.PROD, id="MPI.PROD"),
+]
+
 
 @pytest.fixture(params=ARRAY_SHAPE, autouse=True)
 def array_shape(request: pytest.FixtureRequest) -> tuple:
@@ -19,4 +25,9 @@ def array_shape(request: pytest.FixtureRequest) -> tuple:
 
 @pytest.fixture(params=DTYPE, autouse=True)
 def dtype(request: pytest.FixtureRequest) -> DTypeLike:
+    return request.param
+
+
+@pytest.fixture(params=OP, autouse=True)
+def op(request: pytest.FixtureRequest):
     return request.param

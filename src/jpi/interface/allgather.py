@@ -38,7 +38,7 @@ def allgather_fwd(x: jax.Array, token: jax.Array, comm=None):
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allgather_impl(x, token, comm)
-    return (result, new_token), (x.shape[0])
+    return (result, new_token), (x.shape[0],)
 
 
 def allgather_bwd(comm, res: tuple, g: jax.Array):
@@ -50,7 +50,7 @@ def allgather_bwd(comm, res: tuple, g: jax.Array):
     rank = comm.Get_rank()
     start = rank * sendcount
     end = start + sendcount
-    return (g[start:end],)
+    return (g[start:end], token)
 
 
 allgather.defvjp(allgather_fwd, allgather_bwd)
