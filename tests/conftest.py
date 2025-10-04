@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# Add tests directory to Python path
+sys.path.insert(0, str(Path(__file__).parent))
+
 import pytest
 import jax.numpy as jnp
 from jax._src.typing import DTypeLike
