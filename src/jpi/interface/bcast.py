@@ -1,5 +1,6 @@
 from functools import partial
 import jax
+import jax.numpy as jnp
 
 from jpi.comm import get_default_comm
 
@@ -36,11 +37,13 @@ def bcast_fwd(x: jax.Array, token: jax.Array, root, comm=None):
     return (result, new_token), None
 
 
-def bcast_bwd(root, comm, res: tuple, g: tuple):
-    # raise NotImplementedError("The backward pass of bcast is not implemented.")
+def bcast_bwd(root, comm, _, g):
     g, token = g
-    result, new_token = bcast(g, token, root=root, comm=comm)
-    return (result, new_token)
+    # Get rank from comm
+    rank = comm.Get_rank()
+    # Only root receives the gradient, others get zeros
+    grad_x = g if rank == root else jnp.zeros_like(g)
+    return (grad_x, token)
 
 
 bcast.defvjp(bcast_fwd, bcast_bwd)
