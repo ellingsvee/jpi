@@ -20,6 +20,26 @@ def _barrier_impl(token: jax.Array, comm):
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm"])
 def barrier(token: jax.Array, comm=None):
+    """Synchronize all processes in the communicator.
+
+    Args:
+        token: Synchronization token for ordering operations. The token is passed through unchanged but ensures proper sequencing.
+        comm: MPI communicator. If None, uses the default communicator.
+
+    Returns:
+        new_token: Updated synchronization token (same value as input).
+
+    Example:
+        ```python
+        import jax.numpy as jnp
+        from jpi.interface import barrier
+        from jpi.interface.token import gen_token
+
+        # Ensure all processes reach this point before continuing
+        token = gen_token()
+        token = barrier(token) # Now all processes have synchronized
+        ```
+    """
     if comm is None:
         comm = get_default_comm()
     new_token = _barrier_impl(token, comm)

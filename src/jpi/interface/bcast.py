@@ -22,6 +22,34 @@ def _bcast_impl(x: jax.Array, token: jax.Array, comm, root):
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm", "root"])
 def bcast(x: jax.Array, token: jax.Array, root, comm=None):
+    """Broadcast an array from one process to all others.
+
+    Args:
+        x: Input array to broadcast. Only meaningful on the root process.
+        token: Synchronization token for ordering operations.
+        root: Rank of the root process that owns the data to broadcast.
+        comm: MPI communicator. If None, uses the default communicator.
+
+    Returns:
+        result: The broadcasted array (same on all processes).
+        new_token: Updated synchronization token.
+
+    Example:
+        ```python
+        import jax.numpy as jnp
+        from jpi.interface import bcast
+        from jpi.interface.token import gen_token
+
+        # On rank 0: broadcast this data
+        if rank == 0:
+            data = jnp.array([1.0, 2.0, 3.0])
+        else:
+            data = jnp.zeros(3)  # Will be overwritten
+
+        token = gen_token()
+        result, token = bcast(data, token, root=0) # Now all processes have [1.0, 2.0, 3.0]
+        ```
+    """
     if comm is None:
         comm = get_default_comm()
 

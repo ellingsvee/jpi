@@ -28,6 +28,29 @@ def _allgather_impl(x: jax.Array, token: jax.Array, comm):
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm"])
 def allgather(x: jax.Array, token: jax.Array, comm=None):
+    """Gather arrays from all processes and distribute to all.
+
+    Args:
+        x: Local array to contribute to the gather operation. Must have the same shape on all processes except possibly the first dimension.
+        token: Synchronization token for ordering operations.
+        comm: MPI communicator. If None, uses the default communicator.
+
+    Returns:
+        result: Concatenated array with shape (total_elements, *x.shape[1:]), where total_elements = sum of x.shape[0] across all processes.
+        new_token: Updated synchronization token.
+
+    Example:
+        ```python
+        import jax.numpy as jnp
+        from jpi.interface import allgather
+        from jpi.interface.token import gen_token
+
+        # Each rank contributes different data
+        local_data = jnp.array([rank, rank + 1])  # rank-specific data
+        token = gen_token()
+        result, token = allgather(local_data, token) # result contains data from all ranks concatenated
+        ```
+    """
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allgather_impl(x, token, comm)

@@ -26,6 +26,39 @@ def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
 
 @partial(jax.custom_vjp, nondiff_argnames=["op", "comm"])
 def allreduce(x: jax.Array, token: jax.Array, op, comm=None):
+    """Perform a reduction operation across all processes.
+
+    Args:
+        x: Local array to contribute to the reduction.
+        token: Synchronization token for ordering operations.
+        op: MPI reduction operation. Supported operations include:
+            - MPI.SUM: Element-wise sum across all processes
+            - MPI.PROD: Element-wise product across all processes
+            - MPI.MAX: Element-wise maximum across all processes
+            - MPI.MIN: Element-wise minimum across all processes
+        comm: MPI communicator. If None, uses the default communicator.
+
+    Returns:
+        result: Array containing the reduction result (same on all processes).
+        new_token: Updated synchronization token.
+
+    Raises:
+        NotImplementedError: If the backward pass is not implemented for the
+            specified reduction operation.
+
+    Example:
+        ``` python
+        import jax.numpy as jnp
+        from jpi.interface import allreduce
+        from jpi.interface.token import gen_token
+        from mpi4py import MPI
+
+        # Sum arrays across all processes
+        local_data = jnp.array([1.0, 2.0]) * (rank + 1)
+        token = gen_token()
+        result, token = allreduce(local_data, token, MPI.SUM) # result contains the sum from all processes
+        ```
+    """
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allreduce_impl(x, token, comm, op)
