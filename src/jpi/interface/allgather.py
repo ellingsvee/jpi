@@ -45,12 +45,12 @@ def allgather_bwd(comm, res: tuple, g: jax.Array):
     (sendcount,) = res
 
     # Gradient is simply the slice of g corresponding to this rank
-    g, token = g
+    g_result, g_token = g
 
     rank = comm.Get_rank()
     start = rank * sendcount
     end = start + sendcount
-    return (g[start:end], token)
+    return (g_result[start:end], g_token)
 
 
 allgather.defvjp(allgather_fwd, allgather_bwd)

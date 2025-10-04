@@ -38,11 +38,11 @@ def bcast_fwd(x: jax.Array, token: jax.Array, root, comm=None):
 
 
 def bcast_bwd(root, comm, _, g):
-    g, token = g
+    g_result, token = g
     # Get rank from comm
     rank = comm.Get_rank()
     # Only root receives the gradient, others get zeros
-    grad_x = g if rank == root else jnp.zeros_like(g)
+    grad_x = g_result if rank == root else jnp.zeros_like(g_result)
     return (grad_x, token)
 
 
