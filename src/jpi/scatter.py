@@ -7,24 +7,35 @@ from jpi.token import Token
 
 
 def _scatter_impl(x: jax.Array, token: Token, comm: Comm, root: int):
+    rank = comm.Get_rank()
     size = comm.Get_size()
 
     if x.shape[0] % size != 0:
         raise ValueError(
             f"x.shape[0] ({x.shape[0]}) must be divisible by number of processes ({size})"
         )
-    y_type = jax.ShapeDtypeStruct(x.shape, x.dtype)
 
+    # Each rank's output shape is 1/size slice along axis 0
+    out_shape = (x.shape[0] // size,) + x.shape[1:]
+    y_type = jax.ShapeDtypeStruct(out_shape, x.dtype)
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
-    input_output_aliases = {1: 1}  # alias input and output buffers
 
-    y_unsliced, token = jax.ffi.ffi_call(
+    input_output_aliases = {1: 1}
+
+    numel = int(x.size)  # total number of elements (only relevant on root)
+
+    y, token_out = jax.ffi.ffi_call(
         "scatter",
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x, token, comm_handle=comm.py2f(), root=root)
-    return y_unsliced[: x.shape[0] // size], token
+    )(x, token, comm_handle=comm.py2f(), root=root, numel_per_rank=numel)
+
+    # Squeeze leading dimension if it's 1
+    if y.shape[0] == 1:
+        y = jnp.squeeze(y, axis=0)
+
+    return y, token_out
 
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm", "root"])
@@ -62,23 +73,54 @@ def scatter(
 
 def scatter_fwd(
     x: jax.Array, token: Token, root: int, comm: Comm | None = None
-) -> tuple[tuple[jax.Array, Token], tuple[int]]:
+) -> tuple[tuple[jax.Array, Token], tuple[int, ...]]:
     if comm is None:
         comm = get_default_comm()
     result, new_token = _scatter_impl(x, token, comm, root)
-    return (result, new_token), None
+    return (result, new_token), x.shape
 
 
-def scatter_bwd(
-    root: int, comm: Comm, res: tuple, g: jax.Array
-) -> tuple[jax.Array, Token]:
+# def scatter_bwd(
+#     root: int, comm: Comm, res: tuple, g: jax.Array
+# ) -> tuple[jax.Array, Token]:
+#     # Import gather here to avoid circular import
+#     from jpi.gather import gather
+
+#     g_result, g_token = g
+#     x_shape = res
+
+#     gathered, g_token_new = gather(g_result, g_token, root, comm)
+
+#     # ...
+
+#     return (gathered, g_token_new)
+
+
+def scatter_bwd(root: int, comm: Comm, res: tuple, g: tuple) -> tuple[jax.Array, Token]:
     # Import gather here to avoid circular import
     from jpi.gather import gather
 
+    # g is the cotangent for the primal outputs: (y_cotangent, token_cotangent)
     g_result, g_token = g
+    x_shape = res  # x.shape saved as residual in scatter_fwd
 
+    # gather will assemble the per-rank slices into the full x-shaped array on the root
     gathered, g_token_new = gather(g_result, g_token, root, comm)
-    return (gathered, g_token_new)
+
+    # Make sure non-root ranks return a zero array with the same shape as the primal x.
+    rank = comm.Get_rank()
+    if rank != root:
+        # create zeros with the correct dtype and shape
+        x_grad = jnp.zeros(x_shape, dtype=g_result.dtype)
+    else:
+        # On root we expect 'gathered' to already have the full shape.
+        # Ensure it matches the saved x_shape (reshape if necessary).
+        x_grad = jnp.asarray(gathered)
+        if x_grad.shape != x_shape:
+            x_grad = jnp.reshape(x_grad, x_shape)
+
+    # Return cotangents in the same order as the primal inputs: (x, token)
+    return (x_grad, g_token_new)
 
 
 scatter.defvjp(scatter_fwd, scatter_bwd)

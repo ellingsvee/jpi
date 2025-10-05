@@ -12,8 +12,6 @@ from jpi.op import Op
 def _allreduce_impl(
     x: jax.Array, token: Token, comm: Comm, op: Op
 ) -> tuple[jax.Array, Token]:
-    # op = unpack_hashable(op)
-
     y_type = jax.ShapeDtypeStruct(x.shape, x.dtype)
 
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)

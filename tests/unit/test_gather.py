@@ -29,15 +29,12 @@ def test_gather(
 
     # Only root receives the gathered data
     if rank == 0:
-        sendcount = arr.shape[0]
         for r in range(size):
-            start = r * sendcount
-            end = start + sendcount
             expected = generate_array(array_shape, dtype) + r
-            assert jnp.allclose(y[start:end], expected)
+            assert jnp.allclose(y[r], expected)
     else:
         # On non-root ranks, y may be zeros or uninitialized, so we skip the check
-        pass
+        assert jnp.allclose(y, 0)
 
 
 @pytest.mark.mpi(min_size=2)
@@ -59,15 +56,12 @@ def test_gather_jit(
 
     # Only root receives the gathered data
     if rank == 0:
-        sendcount = arr.shape[0]
         for r in range(size):
-            start = r * sendcount
-            end = start + sendcount
             expected = generate_array(array_shape, dtype) + r
-            assert jnp.allclose(y[start:end], expected)
+            assert jnp.allclose(y[r], expected)
     else:
-        # On non-root ranks, y may be zeros or uninitialized, so we skip the check
-        pass
+        # On non-root ranks, make sure y is zeros
+        assert jnp.allclose(y, 0)
 
 
 @pytest.mark.mpi(min_size=2)

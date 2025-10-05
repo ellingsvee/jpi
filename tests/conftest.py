@@ -17,6 +17,7 @@ DTYPE = [
 ARRAY_SHAPE = [
     pytest.param((5,), id="array_shape=(5,)"),
     pytest.param((2, 2), id="array_shape=(2,2)"),
+    pytest.param((2, 4, 2), id="array_shape=(2,4,2)"),
 ]
 
 OP = [
