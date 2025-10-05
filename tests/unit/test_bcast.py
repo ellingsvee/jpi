@@ -7,7 +7,7 @@ from jax._src.typing import DTypeLike
 from jpi import gen_token
 from jpi import bcast
 
-from testing_utils import generate_array
+from tests.testing_utils import generate_array
 
 from mpi4py import MPI
 
