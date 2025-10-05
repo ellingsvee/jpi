@@ -7,24 +7,33 @@ from jpi.token import Token
 
 
 def _allgather_impl(x: jax.Array, token: Token, comm: Comm) -> tuple[jax.Array, Token]:
-    # The input and output of the ffi_call must have the same shape and dtype
-    # since we are aliasing them. For allgather, the output shape is (size * x.shape[0], ...).
-    # Therefore we need to expand the input x.
-    sendcount = x.shape[0]
-    x_full = jnp.zeros(comm.Get_size() * sendcount, dtype=x.dtype)
-    x_full = x_full.at[0:sendcount].set(x)
+    size = comm.Get_size()
 
-    y_type = jax.ShapeDtypeStruct(x_full.shape, x_full.dtype)
+    # REQUIRE: every rank must provide same x.shape
+    # Determine per-rank element count
+    numel = int(x.size)  # number of elements each rank sends
+    # Output shape: (size, ...) where ... is local shape
+    out_shape = (size,) + tuple(x.shape)
+
+    # JAX FFI types
+    y_type = jax.ShapeDtypeStruct(out_shape, x.dtype)
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
-    input_output_aliases = {0: 0, 1: 1}  # alias input and output buffers
 
-    result, token = jax.ffi.ffi_call(
-        "allgather",
+    # We keep aliasing token (output token out is alias of input token)
+    # Map output index 1 (token_out) to input index 1 (token)
+    input_output_aliases = {1: 1}
+
+    # Build and call FFI. Pass comm handle and numel as extra args.
+    # Note: exact signature names/ordering for jax.ffi.ffi_call vary by your FFI registration.
+    result, token_out = jax.ffi.ffi_call(
+        "allgather",  # name of registered FFI function
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-    )(x_full, token, comm_handle=comm.py2f(), sendcount=sendcount)
-    return result, token
+    )(x, token, comm_handle=comm.py2f(), numel_per_rank=numel)
+
+    # result has shape (size,)+x.shape; return it and token_out
+    return result, token_out
 
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm"])
@@ -62,23 +71,21 @@ def allgather(
 
 def allgather_fwd(
     x: jax.Array, token: Token, comm: Comm | None = None
-) -> tuple[tuple[jax.Array, Token], tuple[int]]:
+) -> tuple[tuple[jax.Array, Token], tuple[int, tuple]]:
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allgather_impl(x, token, comm)
-    return (result, new_token), (x.shape[0],)
+    return (result, new_token), (x.shape[0], x.shape)
 
 
 def allgather_bwd(comm: Comm, res: tuple, g: jax.Array) -> tuple[jax.Array, Token]:
-    (sendcount,) = res
+    (first_dim_size, original_shape) = res
 
     # Gradient is simply the slice of g corresponding to this rank
     g_result, g_token = g
 
     rank = comm.Get_rank()
-    start = rank * sendcount
-    end = start + sendcount
-    return (g_result[start:end], g_token)
+    return (g_result[rank], g_token)
 
 
 allgather.defvjp(allgather_fwd, allgather_bwd)

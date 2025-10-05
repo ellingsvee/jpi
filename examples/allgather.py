@@ -16,16 +16,18 @@ size = comm.Get_size()
 def loss(x):
     token = gen_token()
     gathered, _ = allgather(x, token, comm=comm)
+    print(f"Rank {rank} gathered data:\n{gathered}\n")
     return jnp.sum(jnp.sin(gathered))
 
 
 def loss_with_mpi4jax(x):
     gathered = mpi4jax.allgather(x, comm=comm)
+    # print(f"Rank {rank} gathered data with mpi4jax:\n{gathered}\n")
     return jnp.sum(jnp.sin(gathered))
 
 
 # Each rank contributes its own data
-x = jnp.arange(1, 5, dtype=jnp.float32) + rank * 4
+x = jnp.array([[1, 2], [3, 4]], dtype=jnp.float32) + rank * 4
 
 # ---- compute forward values and gradients ----
 val = loss(x.copy())

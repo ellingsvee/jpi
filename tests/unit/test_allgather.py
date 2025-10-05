@@ -28,12 +28,9 @@ def test_allgather(
     y, _ = allgather(arr, token, comm=comm)
 
     # Check that the result contains data from all ranks
-    sendcount = arr.shape[0]
     for r in range(size):
-        start = r * sendcount
-        end = start + sendcount
         expected = generate_array(array_shape, dtype) + r
-        assert jnp.allclose(y[start:end], expected)
+        assert jnp.allclose(y[r], expected)
 
 
 @pytest.mark.mpi(min_size=2)
@@ -41,6 +38,7 @@ def test_allgather_jit(
     array_shape: tuple,
     dtype: DTypeLike,
 ):
+    # Each rank creates different data
     arr = generate_array(array_shape, dtype) + rank
 
     def allgather_fn(x):
@@ -53,12 +51,9 @@ def test_allgather_jit(
     y = allgather_jit(arr)
 
     # Check that the result contains data from all ranks
-    sendcount = arr.shape[0]
     for r in range(size):
-        start = r * sendcount
-        end = start + sendcount
         expected = generate_array(array_shape, dtype) + r
-        assert jnp.allclose(y[start:end], expected)
+        assert jnp.allclose(y[r], expected)
 
 
 @pytest.mark.mpi(min_size=2)
@@ -79,5 +74,5 @@ def test_allgather_grad(
 
     # For allgather, the gradient should be all ones since each element
     # contributes once to the sum of the gathered result
-    expected = jnp.ones_like(arr)
-    assert jnp.allclose(grad_x, expected)
+    expected_grad = jnp.ones_like(grad_x)
+    assert jnp.allclose(grad_x, expected_grad)

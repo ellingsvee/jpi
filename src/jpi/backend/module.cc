@@ -23,7 +23,7 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Bcast, BcastDispatch,
 XLA_FFI_DEFINE_HANDLER_SYMBOL(AllGather, AllGatherDispatch,
                               ffi::Ffi::Bind()
                                   .Attr<int64_t>("comm_handle")
-                                  .Attr<int64_t>("sendcount")
+                                  .Attr<int64_t>("numel_per_rank")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
                                   .Arg<ffi::AnyBuffer>() // Input token
                                   .Ret<ffi::AnyBuffer>() // Output buffer y
