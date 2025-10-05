@@ -16,7 +16,7 @@ def _scatter_impl(x: jax.Array, token: Token, comm: Comm, root: int):
     y_type = jax.ShapeDtypeStruct(x.shape, x.dtype)
 
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
-    input_output_aliases = {0: 0, 1: 1}  # alias input and output buffers
+    input_output_aliases = {1: 1}  # alias input and output buffers
 
     y_unsliced, token = jax.ffi.ffi_call(
         "scatter",
@@ -77,14 +77,8 @@ def scatter_bwd(
 
     g_result, g_token = g
 
-    # Only root should receive the gathered gradients
     gathered, g_token_new = gather(g_result, g_token, root, comm)
-    if comm.Get_rank() == root:
-        return (gathered, g_token_new)
-    else:
-        # Non-root processes contribute their gradients but get zeros back
-        zeros = jnp.zeros_like(gathered)  # This should be the shape of the full input
-        return (zeros, g_token_new)
+    return (gathered, g_token_new)
 
 
 scatter.defvjp(scatter_fwd, scatter_bwd)

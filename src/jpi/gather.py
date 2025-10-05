@@ -18,7 +18,7 @@ def _gather_impl(
 
     y_type = jax.ShapeDtypeStruct(x_full.shape, x_full.dtype)
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
-    input_output_aliases = {0: 0, 1: 1}  # alias input and output buffers
+    input_output_aliases = {1: 1}  # alias input and output buffers
 
     result, token = jax.ffi.ffi_call(
         "gather",
