@@ -84,7 +84,7 @@ def allreduce_bwd(op: Op, comm: Comm, res: tuple, g: tuple) -> tuple[jax.Array, 
     x, y = res
 
     if op == MPI.SUM:
-        grad_out, g_token = allreduce(g_result, g_token, op, comm=comm)
+        grad_out = g_result
     elif op == MPI.PROD:
         grad_out = jnp.where(x != 0, y / x * g_result, 0)
     elif op == MPI.MAX:

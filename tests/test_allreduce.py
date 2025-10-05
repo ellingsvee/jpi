@@ -53,12 +53,12 @@ def test_allreduce_jit(
 ):
     """Test allreduce with JIT compilation"""
     # Generate appropriate data for each operation
-    if op == MPI.PROD:
-        arr = jnp.abs(generate_array(array_shape, dtype)) + 1.0
-        expected = arr**size
-    elif op == MPI.SUM:
+    if op == MPI.SUM:
         arr = generate_array(array_shape, dtype)
         expected = arr * size
+    elif op == MPI.PROD:
+        arr = jnp.abs(generate_array(array_shape, dtype)) + 1.0
+        expected = arr**size
     elif op == MPI.MAX:
         arr = generate_array(array_shape, dtype) + rank
         expected = generate_array(array_shape, dtype) + (size - 1)
@@ -87,12 +87,12 @@ def test_allreduce_grad(
 ):
     """Test that allreduce gradient works correctly for implemented operations"""
     # Generate appropriate data for each operation
-    if op == MPI.PROD:
+    if op == MPI.SUM:
+        arr = generate_array(array_shape, dtype)
+        expected_grad_fn = lambda arr, size, rank: jnp.ones_like(arr)
+    elif op == MPI.PROD:
         arr = jnp.abs(generate_array(array_shape, dtype)) + 1.0
         expected_grad_fn = lambda arr, size, rank: arr ** (size - 1)
-    elif op == MPI.SUM:
-        arr = generate_array(array_shape, dtype)
-        expected_grad_fn = lambda arr, size, rank: jnp.ones_like(arr) * size
     elif op == MPI.MAX:
         arr = generate_array(array_shape, dtype) + rank
         expected_grad_fn = (
