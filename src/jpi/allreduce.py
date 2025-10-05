@@ -4,10 +4,14 @@ from mpi4py import MPI
 
 import jax
 import jax.numpy as jnp
-from jpi.comm import get_default_comm
+from jpi.comm import get_default_comm, Comm
+from jpi.token import Token
+from jpi.op import Op
 
 
-def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
+def _allreduce_impl(
+    x: jax.Array, token: Token, comm: Comm, op: Op
+) -> tuple[jax.Array, Token]:
     # op = unpack_hashable(op)
 
     y_type = jax.ShapeDtypeStruct(x.shape, x.dtype)
@@ -25,7 +29,9 @@ def _allreduce_impl(x: jax.Array, token: jax.Array, comm, op):
 
 
 @partial(jax.custom_vjp, nondiff_argnames=["op", "comm"])
-def allreduce(x: jax.Array, token: jax.Array, op, comm=None):
+def allreduce(
+    x: jax.Array, token: Token, op: Op, comm: Comm | None = None
+) -> tuple[jax.Array, Token]:
     """Perform a reduction operation across all processes.
 
     Args:
@@ -64,14 +70,16 @@ def allreduce(x: jax.Array, token: jax.Array, op, comm=None):
     return result, new_token
 
 
-def allreduce_fwd(x, token, op, comm=None):
+def allreduce_fwd(
+    x: jax.Array, token: Token, op: Op, comm: Comm | None = None
+) -> tuple[tuple[jax.Array, Token], tuple[jax.Array, jax.Array]]:
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allreduce_impl(x, token, comm, op)
     return (result, new_token), (x, result)
 
 
-def allreduce_bwd(op, comm, res, g):
+def allreduce_bwd(op: Op, comm: Comm, res: tuple, g: tuple) -> tuple[jax.Array, Token]:
     g_result, g_token = g  # gradients w.r.t. outputs
     x, y = res
 

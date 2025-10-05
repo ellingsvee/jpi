@@ -1,9 +1,12 @@
 # Internal token for ordering MPI operations
+from typing import TypeAlias
 import jax.numpy as jnp
 import jax
 
+Token: TypeAlias = jax.Array
 
-def gen_token() -> jax.Array:
+
+def gen_token() -> Token:
     """Generate a synchronization token for MPI operations.
 
     Returns:

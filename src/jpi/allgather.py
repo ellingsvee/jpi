@@ -2,10 +2,11 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from jpi.comm import get_default_comm
+from jpi.comm import get_default_comm, Comm
+from jpi.token import Token
 
 
-def _allgather_impl(x: jax.Array, token: jax.Array, comm):
+def _allgather_impl(x: jax.Array, token: Token, comm: Comm) -> tuple[jax.Array, Token]:
     # The input and output of the ffi_call must have the same shape and dtype
     # since we are aliasing them. For allgather, the output shape is (size * x.shape[0], ...).
     # Therefore we need to expand the input x.
@@ -27,7 +28,9 @@ def _allgather_impl(x: jax.Array, token: jax.Array, comm):
 
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm"])
-def allgather(x: jax.Array, token: jax.Array, comm=None):
+def allgather(
+    x: jax.Array, token: Token, comm: Comm | None = None
+) -> tuple[jax.Array, Token]:
     """Gather arrays from all processes and distribute to all.
 
     Args:
@@ -57,14 +60,16 @@ def allgather(x: jax.Array, token: jax.Array, comm=None):
     return result, new_token
 
 
-def allgather_fwd(x: jax.Array, token: jax.Array, comm=None):
+def allgather_fwd(
+    x: jax.Array, token: Token, comm: Comm | None = None
+) -> tuple[tuple[jax.Array, Token], tuple[int]]:
     if comm is None:
         comm = get_default_comm()
     result, new_token = _allgather_impl(x, token, comm)
     return (result, new_token), (x.shape[0],)
 
 
-def allgather_bwd(comm, res: tuple, g: jax.Array):
+def allgather_bwd(comm: Comm, res: tuple, g: jax.Array) -> tuple[jax.Array, Token]:
     (sendcount,) = res
 
     # Gradient is simply the slice of g corresponding to this rank

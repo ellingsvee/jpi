@@ -2,10 +2,13 @@ import jax
 
 from jpi.comm import get_default_comm
 
+from jpi.comm import Comm
+from jpi.token import Token
+
 from functools import partial
 
 
-def _barrier_impl(token: jax.Array, comm):
+def _barrier_impl(token: Token, comm: Comm) -> Token:
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
     input_output_aliases = {0: 0}  # alias input and output buffers
 
@@ -19,7 +22,7 @@ def _barrier_impl(token: jax.Array, comm):
 
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm"])
-def barrier(token: jax.Array, comm=None):
+def barrier(token: Token, comm: Comm | None = None) -> Token:
     """Synchronize all processes in the communicator.
 
     Args:
@@ -45,14 +48,14 @@ def barrier(token: jax.Array, comm=None):
     return new_token
 
 
-def barrier_fwd(token: jax.Array, comm=None):
+def barrier_fwd(token: Token, comm: Comm | None = None) -> tuple[Token, None]:
     if comm is None:
         comm = get_default_comm()
     new_token = _barrier_impl(token, comm)
     return new_token, None
 
 
-def barrier_bwd(comm, _, g):
+def barrier_bwd(comm: Comm, _, g: Token) -> tuple[Token]:
     return (g,)
 
 
