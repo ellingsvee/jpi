@@ -83,6 +83,10 @@ result = func_jit(data)
 grad_result = func_grad(data)
 print(f"Rank {comm.rank} has result {result} and gradient {grad_result}")
 ```
+Run the above code with MPI using:
+```bash
+mpirun -np 4 uv run python examples/intro_example.py
+```
 
 ## Testing
 Tests are implemented using `pytest`. To run the tests with MPI use:
