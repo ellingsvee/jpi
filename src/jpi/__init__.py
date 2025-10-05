@@ -5,6 +5,9 @@ from jpi.allgather import allgather
 from jpi.allreduce import allreduce
 from jpi.bcast import bcast
 from jpi.barrier import barrier
+from jpi.gather import gather
+from jpi.scatter import scatter
+
 from jpi.token import gen_token
 
 
@@ -15,4 +18,12 @@ jax.config.update("jax_enable_x64", True)
 for name, target in backend.registrations().items():
     jax.ffi.register_ffi_target(name, target)
 
-__all__ = ["allgather", "allreduce", "bcast", "barrier", "gen_token"]
+__all__ = [
+    "allgather",
+    "allreduce",
+    "bcast",
+    "barrier",
+    "gen_token",
+    "gather",
+    "scatter",
+]

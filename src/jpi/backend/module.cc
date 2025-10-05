@@ -1,8 +1,11 @@
 #include "allgather.h"
 #include "allreduce.h"
 #include "bcast.h"
-#include "nanobind/nanobind.h"
 #include "barrier.h"
+#include "gather.h"
+#include "scatter.h"
+
+#include "nanobind/nanobind.h"
 
 namespace nb = nanobind;
 namespace ffi = xla::ffi;
@@ -19,9 +22,6 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Bcast, BcastDispatch,
 
 XLA_FFI_DEFINE_HANDLER_SYMBOL(AllGather, AllGatherDispatch,
                               ffi::Ffi::Bind()
-                                  // .Attr<int64_t>("root")
-                                  // .Attr<int64_t>("rank")
-                                  // .Attr<int64_t>("size")
                                   .Attr<int64_t>("comm_handle")
                                   .Attr<int64_t>("sendcount")
                                   .Arg<ffi::AnyBuffer>() // Input buffer x
@@ -47,6 +47,27 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Barrier, BarrierDispatch,
                                   .Ret<ffi::AnyBuffer>() // Output token
 );
 
+XLA_FFI_DEFINE_HANDLER_SYMBOL(Gather, GatherDispatch,
+                              ffi::Ffi::Bind()
+                                  .Attr<int64_t>("comm_handle")
+                                  .Attr<int64_t>("root")
+                                  .Attr<int64_t>("sendcount")
+                                  .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Arg<ffi::AnyBuffer>() // Input token
+                                  .Ret<ffi::AnyBuffer>() // Output buffer y
+                                  .Ret<ffi::AnyBuffer>() // Output token
+);
+
+XLA_FFI_DEFINE_HANDLER_SYMBOL(Scatter, ScatterDispatch,
+                              ffi::Ffi::Bind()
+                                  .Attr<int64_t>("comm_handle")
+                                  .Attr<int64_t>("root")
+                                  .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Arg<ffi::AnyBuffer>() // Input token
+                                  .Ret<ffi::AnyBuffer>() // Output buffer y
+                                  .Ret<ffi::AnyBuffer>() // Output token
+);
+
 template <typename T>
 nb::capsule EncapsulateFfiHandler(T *fn)
 {
@@ -64,5 +85,7 @@ NB_MODULE(backend, m)
     registrations["allgather"] = EncapsulateFfiHandler(AllGather);
     registrations["allreduce"] = EncapsulateFfiHandler(AllReduce);
     registrations["barrier"] = EncapsulateFfiHandler(Barrier);
+    registrations["gather"] = EncapsulateFfiHandler(Gather);
+    registrations["scatter"] = EncapsulateFfiHandler(Scatter);
     return registrations; });
 }
