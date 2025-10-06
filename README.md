@@ -13,7 +13,7 @@ JPI (JAX Parallel Interface) is a library for distributed computing with [JAX](h
 
 ## Current Limitations
 
-- **CPU-only support**: GPU operations are not yet implemented. However, this can be added in future versions by implementing FFI calls on GPU as described in the [FFI calls documentation](https://docs.jax.dev/en/latest/ffi.html#ffi-calls-on-a-gpu).
+- **CPU-only support**: GPU operations are not yet implemented. However, this can be added by implementing FFI calls on GPU as described in the [FFI documentation](https://docs.jax.dev/en/latest/ffi.html#ffi-calls-on-a-gpu).
 - **Limited MPI operations**: Only a subset of MPI collective operations are implemented.
 - **Development stage**: API may change in future versions
 
@@ -23,7 +23,7 @@ Installing currently requires some system-level dependencies. Make sure these ar
 - `uv`: Recommended package manager. See [Installing uv](https://docs.astral.sh/uv/getting-started/installation/).
 - `Python3 >=3.13`: See [Installing python](https://docs.astral.sh/uv/guides/install-python/) for installing Python using `uv`. 
 - `git`: See [git downloads](https://git-scm.com/downloads).
-- `OpenMPI`: See [OpenMPI documentation](https://docs.open-mpi.org/en/v5.0.x/index.html). You might need to update the CMakeLists.txt file to point to the correct MPI installation.
+- `OpenMPI`: See [OpenMPI documentation](https://docs.open-mpi.org/en/v5.0.x/index.html). You might need to update the `CMakeLists.txt` file to point to the correct MPI installation.
 
 ### Building the project
 As the MPI operations are implemented in C++, the project needs to be built before use. This is handled automatically when installing with `uv`. Install the project with:
@@ -33,9 +33,10 @@ git clone https://github.com/ellingsvee/jpi.git
 cd jpi
 
 # Install with uv
-uv sync 
+uv sync
 uv build
 ```
+If the installation fails, it could be that your MPI-installation is not found. This might need to be specified in the `CMakeLists.txt` file.
 
 ### Modifying the C++ backend
 If you make changes to the C++ code, you need to rebuild the project. This can be done with:
