@@ -4,12 +4,12 @@ JPI (JAX Parallel Interface) is a library for distributed computing with [JAX](h
 
 ## Features
 
-- **Complete MPI collective operations**: Implementations of `allreduce`, `allgather`, `scatter`, `gather`, `broadcast`, and `barrier`. More can easily be added.
-- **JAX transformation compatibility**: Full support for `jit`, `grad`, `vmap`, and other JAX transformations
+- **MPI collective operations**: Implementations of `allreduce`, `allgather`, `scatter`, `gather`, `broadcast`, and `barrier`. More can easily be added.
+- **JAX transformation**: Full support for `jit`, `grad`, `vmap`, and other JAX transformations
 - **Automatic differentiation**: Custom VJP definitions ensure correct gradient computation through parallel operations
 - **Interoperability with mpi4py**: Uses `mpi4py` communicators, allowing easy integration with existing MPI-based codebases.
 - **Token-based synchronization**: As JAX and XLA operate on the assumption that all primitives are pure functions without side effects, the compiler is in principle free to re-order operations. Inspired by [mpi4jax](https://github.com/mpi4jax/mpi4jax/tree/main), this is handeled by introducing a fake data dependency between subsequent calls using tokens.
-- **Implemented with JAX FFI**: The MPI operations are implemented in C++ and interfaced with JAX using the Foreign Function Interface (FFI) for performance. There is no copying of data between JAX and the MPI backend, ensuring low overhead.
+- **JAX FFI backend**: The MPI operations are implemented in C++ and interfaced with JAX using the Foreign Function Interface (FFI) for performance. There is no copying of data between JAX and the MPI backend, ensuring low overhead.
 
 ## Current Limitations
 
@@ -53,22 +53,30 @@ uv build
 import jax
 import jax.numpy as jnp
 from mpi4py import MPI
-from jpi import allreduce, gen_token
+from jpi import allreduce, scatter, gen_token
 
+# Use mpi4py communicator
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-# Each rank starts with its own data
-data = jnp.array([comm.rank], dtype=jnp.float32)
+# Fill the root rank with data, others with zeros
+if rank == 0:
+    x = jnp.arange(2 * size, dtype=jnp.float32)
+else:
+    x = jnp.zeros(2 * size, dtype=jnp.float32)
 
 
-# Some function that uses allreduce
-def func(data):
+# Some example function that uses scatter and allreduce
+def func(x):
     token = gen_token()
-    result, _ = allreduce(data, token, op=MPI.SUM, comm=comm)
+    # Scatter x from rank 0 to all ranks
+    x, token = scatter(x, token, root=0, comm=comm)
 
-    # Each rank can do something different
+    # Perform allreduce (sum) on the scattered x
+    result, token = allreduce(x, token, op=MPI.SUM, comm=comm)
+
+    # Each rank can do something different with the result
     if rank == 0:
         result = result * 2
     return jnp.sum(result)
@@ -76,16 +84,22 @@ def func(data):
 
 # JIT and grad the function
 func_jit = jax.jit(func)
-func_grad = jax.grad(func_jit)
+func_grad = jax.grad(func)
 
 # Compute result and gradient
-result = func_jit(data)
-grad_result = func_grad(data)
+result = func_jit(x)
+grad_result = func_grad(x)
 print(f"Rank {comm.rank} has result {result} and gradient {grad_result}")
+
+# Out
+# Rank 0 has result 56.0 and gradient [2. 2. 1. 1. 1. 1. 1. 1.]
+# Rank 1 has result 28.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
+# Rank 2 has result 28.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
+# Rank 3 has result 28.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
 ```
 Run the above code with MPI using:
 ```bash
-mpirun -np 4 uv run python examples/intro_example.py
+mpirun -np 4 uv run examples/intro_example.py
 ```
 
 ## Testing
