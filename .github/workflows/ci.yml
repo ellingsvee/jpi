@@ -24,7 +24,7 @@ jobs:
           version: "0.4.22"
           enable-cache: true
       - name: Run tests
-        run: mpirun -np 4 uv run --only-dev --frozen pytest
+        run: mpirun -np 2 uv run --only-dev --frozen pytest
 
   deploy:
     runs-on: ubuntu-latest
