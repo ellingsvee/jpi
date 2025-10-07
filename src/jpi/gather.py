@@ -1,6 +1,5 @@
 from functools import partial
 import jax
-import jax.numpy as jnp
 
 from jpi.comm import get_default_comm, Comm
 from jpi.token import Token
@@ -34,11 +33,6 @@ def _gather_impl(
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
     )(x, token, comm_handle=comm.py2f(), numel_per_rank=numel, root=root)
-
-    # FIX: Set the non-root to zero
-    if rank != root:
-        # create zeros with the correct dtype and shape
-        result = jnp.zeros_like(result)
 
     # result has shape (size,)+x.shape; return it and token_out
     return result, token_out

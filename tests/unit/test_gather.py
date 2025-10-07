@@ -32,9 +32,6 @@ def test_gather(
         for r in range(size):
             expected = generate_array(array_shape, dtype) + r
             assert jnp.allclose(y[r], expected)
-    else:
-        # On non-root ranks, make sure y is zeros
-        assert jnp.allclose(y, 0)
 
 
 @pytest.mark.mpi(min_size=2)
@@ -59,9 +56,6 @@ def test_gather_jit(
         for r in range(size):
             expected = generate_array(array_shape, dtype) + r
             assert jnp.allclose(y[r], expected)
-    else:
-        # On non-root ranks, make sure y is zeros
-        assert jnp.allclose(y, 0)
 
 
 @pytest.mark.mpi(min_size=2)
