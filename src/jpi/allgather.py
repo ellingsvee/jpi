@@ -29,7 +29,6 @@ def _allgather_impl(x: jax.Array, token: Token, comm: Comm) -> tuple[jax.Array, 
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-        has_side_effect=True,
     )(x, token, comm_handle=comm.py2f(), numel_per_rank=numel)
 
     # result has shape (size,)+x.shape; return it and token_out

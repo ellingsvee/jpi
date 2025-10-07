@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 
 from jpi.comm import get_default_comm, Comm
-from jpi.token import Token
+from jpi.token import Token, gen_token
 
 
 def _scatter_impl(x: jax.Array, token: Token, comm: Comm, root: int):
@@ -29,7 +29,7 @@ def _scatter_impl(x: jax.Array, token: Token, comm: Comm, root: int):
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-        has_side_effect=True,
+        # has_side_effect=True,
     )(x, token, comm_handle=comm.py2f(), root=root, numel_per_rank=numel)
 
     # Squeeze leading dimension if it's 1

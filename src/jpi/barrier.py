@@ -17,7 +17,6 @@ def _barrier_impl(token: Token, comm: Comm) -> Token:
         (token_type,),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
-        has_side_effect=True,
     )(token, comm_handle=comm.py2f())[0]
     return token
 
