@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 
 from jpi.comm import get_default_comm, Comm
-from jpi.token import Token, gen_token
+from jpi.token import Token
 
 
 def _scatter_impl(x: jax.Array, token: Token, comm: Comm, root: int):
@@ -92,16 +92,8 @@ def scatter_bwd(root: int, comm: Comm, res: tuple, g: tuple) -> tuple[jax.Array,
     # gather will assemble the per-rank slices into the full x-shaped array on the root
     x_grad, g_token_new = gather(g_result, g_token, root, comm)
 
-    # Make sure non-root ranks return a zero array with the same shape as the primal x.
-    rank = comm.Get_rank()
-    if rank != root:
-        # create zeros with the correct dtype and shape
-        x_grad = jnp.zeros(x_shape, dtype=g_result.dtype)
-    else:
-        # On root we expect 'gathered' to already have the full shape.
-        # Ensure it matches the saved x_shape (reshape if necessary).
-        if x_grad.shape != x_shape:
-            x_grad = jnp.reshape(x_grad, x_shape)
+    if x_grad.shape != x_shape:
+        x_grad = jnp.reshape(x_grad, x_shape)
 
     # Return cotangents in the same order as the primal inputs: (x, token)
     return (x_grad, g_token_new)
