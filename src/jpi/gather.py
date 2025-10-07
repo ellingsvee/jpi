@@ -9,6 +9,7 @@ from jpi.token import Token
 def _gather_impl(
     x: jax.Array, token: Token, comm: Comm, root: int
 ) -> tuple[jax.Array, Token]:
+    rank = comm.Get_rank()
     size = comm.Get_size()
 
     # REQUIRE: every rank must provide same x.shape
@@ -32,6 +33,7 @@ def _gather_impl(
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
+        has_side_effect=True,
     )(x, token, comm_handle=comm.py2f(), numel_per_rank=numel, root=root)
 
     # FIX: Set the non-root to zero

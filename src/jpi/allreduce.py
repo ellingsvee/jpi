@@ -22,6 +22,7 @@ def _allreduce_impl(
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
+        has_side_effect=True,
     )(x, token, comm_handle=comm.py2f(), op_handle=op.py2f())
     return result, token
 
@@ -59,7 +60,9 @@ def allreduce(
         # Sum arrays across all processes
         local_data = jnp.array([1.0, 2.0]) * (rank + 1)
         token = gen_token()
-        result, token = allreduce(local_data, token, MPI.SUM) # result contains the sum from all processes
+        result, token = allreduce(
+            local_data, token, MPI.SUM
+        )  # result contains the sum from all processes
         ```
     """
     if comm is None:

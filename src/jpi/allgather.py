@@ -1,6 +1,5 @@
 from functools import partial
 import jax
-import jax.numpy as jnp
 
 from jpi.comm import get_default_comm, Comm
 from jpi.token import Token
@@ -30,6 +29,7 @@ def _allgather_impl(x: jax.Array, token: Token, comm: Comm) -> tuple[jax.Array, 
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
+        has_side_effect=True,
     )(x, token, comm_handle=comm.py2f(), numel_per_rank=numel)
 
     # result has shape (size,)+x.shape; return it and token_out
@@ -60,7 +60,9 @@ def allgather(
         # Each rank contributes different data
         local_data = jnp.array([rank, rank + 1])  # rank-specific data
         token = gen_token()
-        result, token = allgather(local_data, token) # result contains data from all ranks concatenated
+        result, token = allgather(
+            local_data, token
+        )  # result contains data from all ranks concatenated
         ```
     """
     if comm is None:

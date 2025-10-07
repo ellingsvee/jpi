@@ -13,12 +13,12 @@ def _bcast_impl(
     token_type = jax.ShapeDtypeStruct(token.shape, token.dtype)
     input_output_aliases = {0: 0, 1: 1}  # alias input and output buffers
 
-    # NOTE: The root is unused in bcast. Just use the default root=0.
     result, token = jax.ffi.ffi_call(
         "bcast",
         (y_type, token_type),
         vmap_method="sequential",
         input_output_aliases=input_output_aliases,
+        has_side_effect=True,
     )(x, token, comm_handle=comm.py2f(), root=root)
     return result, token
 
@@ -51,7 +51,9 @@ def bcast(
             data = jnp.zeros(3)  # Will be overwritten
 
         token = gen_token()
-        result, token = bcast(data, token, root=0) # Now all processes have [1.0, 2.0, 3.0]
+        result, token = bcast(
+            data, token, root=0
+        )  # Now all processes have [1.0, 2.0, 3.0]
         ```
     """
     if comm is None:
