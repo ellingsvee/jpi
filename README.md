@@ -41,6 +41,7 @@ cd jpi
 uv sync
 uv build
 ```
+
 If the installation fails, it could be that your MPI-installation is not found. This might need to be specified in the `CMakeLists.txt` file.
 
 ### Modifying the C++ backend
@@ -98,7 +99,7 @@ result = func_jit(x)
 grad_result = func_grad(x)
 print(f"Rank {comm.rank} has result {result} and gradient {grad_result}")
 
-# Out
+# Output when running with 4 processes
 # Rank 0 has result 41.0 and gradient [1. 1. 1. 1. 1. 1. 2. 2.]
 # Rank 1 has result 41.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
 # Rank 2 has result 41.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
@@ -116,7 +117,7 @@ mpirun -np 4 uv run examples/intro_example.py
 Tests are implemented using `pytest`. To run the tests with MPI use:
 
 ```bash
-mpirun -np 4 uv run pytest --with-mpi 
+mpirun -np 4 uv run pytest
 ```
 
 ## License
@@ -126,3 +127,4 @@ MIT License. See `LICENSE` file for details.
 ## Alternatives
 
 This project is inspired by the great [mpi4jax](https://github.com/mpi4jax/mpi4jax).  Built using `mpi4py.libmpi` to exposes MPI C primitives as Cython callables, mpi4jax is currently more mature and has more features. JPI aims to provide a simpler and more extensible framework for integrating MPI with JAX.  Additionally, building on top of JAX's FFI allows XLA to better optimize the C++ backend for performance.
+

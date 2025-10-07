@@ -42,7 +42,7 @@ grad_result = func_grad(x)
 
 print(f"Rank {comm.rank} has result {result} and gradient {grad_result}")
 
-# Out
+# Output when running with 4 processes
 # Rank 0 has result 41.0 and gradient [1. 1. 1. 1. 1. 1. 2. 2.]
 # Rank 1 has result 41.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
 # Rank 2 has result 41.0 and gradient [0. 0. 0. 0. 0. 0. 0. 0.]
