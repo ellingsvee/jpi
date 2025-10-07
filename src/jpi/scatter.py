@@ -89,7 +89,7 @@ def scatter_bwd(root: int, comm: Comm, res: tuple, g: tuple) -> tuple[jax.Array,
     x_shape = res  # x.shape saved as residual in scatter_fwd
 
     # gather will assemble the per-rank slices into the full x-shaped array on the root
-    gathered, g_token_new = gather(g_result, g_token, root, comm)
+    x_grad, g_token_new = gather(g_result, g_token, root, comm)
 
     # Make sure non-root ranks return a zero array with the same shape as the primal x.
     rank = comm.Get_rank()
@@ -99,7 +99,6 @@ def scatter_bwd(root: int, comm: Comm, res: tuple, g: tuple) -> tuple[jax.Array,
     else:
         # On root we expect 'gathered' to already have the full shape.
         # Ensure it matches the saved x_shape (reshape if necessary).
-        x_grad = jnp.asarray(gathered)
         if x_grad.shape != x_shape:
             x_grad = jnp.reshape(x_grad, x_shape)
 
