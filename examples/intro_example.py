@@ -34,11 +34,12 @@ def func(x):
 
 # JIT and grad the function
 func_jit = jax.jit(func)
-func_grad = jax.grad(func)
+func_grad = jax.grad(func_jit)
 
 # Compute result and gradient
 result = func_jit(x)
 grad_result = func_grad(x)
+
 print(f"Rank {comm.rank} has result {result} and gradient {grad_result}")
 
 # Out
