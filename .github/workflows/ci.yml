@@ -45,7 +45,7 @@ jobs:
           version: "0.4.22"
           enable-cache: true
       - name: Sync dependencies
-        run: uv sync --frozen --all-extras
+        run: uv sync --frozen --group docs
       - name: Configure Git credentials
         run: |
           git config user.name github-actions[bot]
