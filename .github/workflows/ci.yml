@@ -18,19 +18,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libopenmpi-dev openmpi-bin cmake
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
         with:
           version: "0.4.22"
           enable-cache: true
-      - name: Sync dependencies
-        run: uv sync --frozen
+      - name: Sync uv
+        run: uv sync --dev --frozen
       - name: Run tests
-        run: uv run pytest tests/
+        run: mpirun -np 2 uv run pytest
 
   deploy:
     runs-on: ubuntu-latest
@@ -42,17 +38,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libopenmpi-dev openmpi-bin cmake
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
         with:
           version: "0.4.22"
           enable-cache: true
       - name: Sync dependencies
-        run: uv sync --frozen
+        run: uv sync --frozen --all-groups
       - name: Configure Git credentials
         run: |
           git config user.name github-actions[bot]
