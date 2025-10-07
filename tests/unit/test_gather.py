@@ -33,7 +33,7 @@ def test_gather(
             expected = generate_array(array_shape, dtype) + r
             assert jnp.allclose(y[r], expected)
     else:
-        # On non-root ranks, y may be zeros or uninitialized, so we skip the check
+        # On non-root ranks, make sure y is zeros
         assert jnp.allclose(y, 0)
 
 
@@ -47,7 +47,7 @@ def test_gather_jit(
 
     def gather_fn(x):
         token = gen_token()
-        y, _ = gather(arr, token, root=0, comm=comm)
+        y, _ = gather(x, token, root=0, comm=comm)
         return y
 
     gather_jit = jit(gather_fn)
