@@ -34,6 +34,11 @@ def _gather_impl(
         input_output_aliases=input_output_aliases,
     )(x, token, comm_handle=comm.py2f(), numel_per_rank=numel, root=root)
 
+    # FIX: Set the non-root to zero
+    if rank != root:
+        # create zeros with the correct dtype and shape
+        result = jnp.zeros_like(result)
+
     # result has shape (size,)+x.shape; return it and token_out
     return result, token_out
 
@@ -62,7 +67,9 @@ def gather(
         # Each rank contributes different data
         local_data = jnp.array([rank, rank + 1])  # rank-specific data
         token = gen_token()
-        result, token = gather(local_data, token, root=0) # rank 0 contains data from all ranks concatenated
+        result, token = gather(
+            local_data, token, root=0
+        )  # rank 0 contains data from all ranks concatenated
         ```
     """
     if comm is None:
@@ -73,21 +80,18 @@ def gather(
 
 def gather_fwd(
     x: jax.Array, token: Token, root: int, comm: Comm | None = None
-) -> tuple[tuple[jax.Array, Token], tuple[int, ...]]:
+) -> tuple[tuple[jax.Array, Token], None]:
     if comm is None:
         comm = get_default_comm()
     result, new_token = _gather_impl(x, token, comm, root)
-    return (result, new_token), x.shape
+    return (result, new_token), None
 
 
-def gather_bwd(
-    root: int, comm: Comm, res: tuple, g: jax.Array
-) -> tuple[jax.Array, Token]:
+def gather_bwd(root: int, comm: Comm, _, g: jax.Array) -> tuple[jax.Array, Token]:
     # Import scatter here to avoid circular import
     from jpi.scatter import scatter
 
     g_result, g_token = g
-    x_shape = res
 
     # We need to scatter the relevant slices back to each process
     scattered, g_token_new = scatter(g_result, g_token, root, comm)
