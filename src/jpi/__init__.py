@@ -7,6 +7,8 @@ from jpi.bcast import bcast
 from jpi.barrier import barrier
 from jpi.gather import gather
 from jpi.scatter import scatter
+from jpi.send import send
+from jpi.recv import recv
 
 from jpi.token import gen_token
 
@@ -26,4 +28,6 @@ __all__ = [
     "gen_token",
     "gather",
     "scatter",
+    "send",
+    "recv",
 ]

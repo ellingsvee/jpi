@@ -4,6 +4,8 @@
 #include "barrier.h"
 #include "gather.h"
 #include "scatter.h"
+#include "send.h"
+#include "recv.h"
 
 #include "nanobind/nanobind.h"
 
@@ -69,6 +71,30 @@ XLA_FFI_DEFINE_HANDLER_SYMBOL(Scatter, ScatterDispatch,
                                   .Ret<ffi::AnyBuffer>() // Output token
 );
 
+XLA_FFI_DEFINE_HANDLER_SYMBOL(Send, SendDispatch,
+                              ffi::Ffi::Bind()
+                                  .Attr<int64_t>("comm_handle")
+                                  .Attr<int64_t>("numel_per_rank")
+                                  .Attr<int64_t>("dest")
+                                  .Attr<int64_t>("tag")
+                                  .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Arg<ffi::AnyBuffer>() // Input token
+                                  .Ret<ffi::AnyBuffer>() // Output buffer y
+                                  .Ret<ffi::AnyBuffer>() // Output token
+);
+
+XLA_FFI_DEFINE_HANDLER_SYMBOL(Recv, RecvDispatch,
+                              ffi::Ffi::Bind()
+                                  .Attr<int64_t>("comm_handle")
+                                  .Attr<int64_t>("numel_per_rank")
+                                  .Attr<int64_t>("source")
+                                  .Attr<int64_t>("tag")
+                                  .Arg<ffi::AnyBuffer>() // Input buffer x
+                                  .Arg<ffi::AnyBuffer>() // Input token
+                                  .Ret<ffi::AnyBuffer>() // Output buffer y
+                                  .Ret<ffi::AnyBuffer>() // Output token
+);
+
 template <typename T>
 nb::capsule EncapsulateFfiHandler(T *fn)
 {
@@ -88,5 +114,7 @@ NB_MODULE(backend, m)
     registrations["barrier"] = EncapsulateFfiHandler(Barrier);
     registrations["gather"] = EncapsulateFfiHandler(Gather);
     registrations["scatter"] = EncapsulateFfiHandler(Scatter);
+    registrations["send"] = EncapsulateFfiHandler(Send);
+    registrations["recv"] = EncapsulateFfiHandler(Recv);
     return registrations; });
 }
