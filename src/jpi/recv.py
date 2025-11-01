@@ -34,7 +34,11 @@ def _recv_impl(
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm", "source", "tag"])
 def recv(
-    x: jax.Array, token: Token, source: int, tag: int = 0, comm: Comm | None = None,
+    x: jax.Array,
+    token: Token,
+    source: int,
+    tag: int = 0,
+    comm: Comm | None = None,
 ) -> tuple[jax.Array, Token]:
     """Receive arrays
 
@@ -68,12 +72,14 @@ def recv_fwd(
     return (result, new_token), None
 
 
-def recv_bwd(source: int, tag: int, comm: Comm, _, g: tuple[jax.Array, Token]) -> tuple[jax.Array, Token]:
+def recv_bwd(
+    source: int, tag: int, comm: Comm, _, g: tuple[jax.Array, Token]
+) -> tuple[jax.Array, Token]:
     # Import send here to avoid circular import
     from jpi.send import send
-    
+
     g_result, g_token = g
-    
+
     # We need to scatter the relevant slices back to each process
     g_result, g_token_new = send(g_result, g_token, dest=source, tag=tag, comm=comm)
     return (g_result, g_token_new)

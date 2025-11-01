@@ -82,7 +82,9 @@ def gather_fwd(
     return (result, new_token), None
 
 
-def gather_bwd(root: int, comm: Comm, _, g: jax.Array) -> tuple[jax.Array, Token]:
+def gather_bwd(
+    root: int, comm: Comm, _, g: tuple[jax.Array, Token]
+) -> tuple[jax.Array, Token]:
     # Import scatter here to avoid circular import
     from jpi.scatter import scatter
 

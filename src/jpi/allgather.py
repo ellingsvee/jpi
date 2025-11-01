@@ -79,9 +79,9 @@ def allgather_fwd(
     return (result, new_token), (x.shape[0], x.shape)
 
 
-def allgather_bwd(comm: Comm, res: tuple, g: jax.Array) -> tuple[jax.Array, Token]:
-    (first_dim_size, original_shape) = res
-
+def allgather_bwd(
+    comm: Comm, _: tuple, g: tuple[jax.Array, Token]
+) -> tuple[jax.Array, Token]:
     # Gradient is simply the slice of g corresponding to this rank
     g_result, g_token = g
 

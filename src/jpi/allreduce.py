@@ -79,7 +79,9 @@ def allreduce_fwd(
     return (result, new_token), (x, result)
 
 
-def allreduce_bwd(op: Op, _, res: tuple, g: tuple) -> tuple[jax.Array, Token]:
+def allreduce_bwd(
+    op: Op, _, res: tuple, g: tuple[jax.Array, Token]
+) -> tuple[jax.Array, Token]:
     g_result, g_token = g  # gradients w.r.t. outputs
     x, y = res
 

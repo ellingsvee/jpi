@@ -72,7 +72,9 @@ def bcast_fwd(
     return (result, new_token), None
 
 
-def bcast_bwd(root: int, comm: Comm, _, g: Token) -> tuple[jax.Array, Token]:
+def bcast_bwd(
+    root: int, comm: Comm, _, g: tuple[jax.Array, Token]
+) -> tuple[jax.Array, Token]:
     g_result, token = g
     # Get rank from comm
     rank = comm.Get_rank()

@@ -34,12 +34,16 @@ def _send_impl(
 
 @partial(jax.custom_vjp, nondiff_argnames=["comm", "dest", "tag"])
 def send(
-    x: jax.Array, token: Token, dest: int, tag: int = 0, comm: Comm | None = None,
+    x: jax.Array,
+    token: Token,
+    dest: int,
+    tag: int = 0,
+    comm: Comm | None = None,
 ) -> tuple[jax.Array, Token]:
     """Send arrays
 
     Args:
-        x: Local array to contribute to the send operation. 
+        x: Local array to contribute to the send operation.
         token: Synchronization token for ordering operations.
         dest: Destination rank to send data to.
         tag: Message tag for MPI communication.
@@ -68,12 +72,14 @@ def send_fwd(
     return (result, new_token), None
 
 
-def send_bwd(dest: int, tag: int, comm: Comm, _, g: tuple[jax.Array, Token]) -> tuple[jax.Array, Token]:
+def send_bwd(
+    dest: int, tag: int, comm: Comm, _, g: tuple[jax.Array, Token]
+) -> tuple[jax.Array, Token]:
     # Import recv here to avoid circular import
     from jpi.recv import recv
-    
+
     g_result, g_token = g
-    
+
     # We need to scatter the relevant slices back to each process
     g_result, g_token_new = recv(g_result, g_token, source=dest, tag=tag, comm=comm)
     return (g_result, g_token_new)

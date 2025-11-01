@@ -24,7 +24,7 @@ def test_send_and_recv(
     # Each rank creates different data
     arr = generate_array(array_shape, dtype) + rank
 
-    token = gen_token() 
+    token = gen_token()
 
     if rank == 0:
         dest = 1
@@ -32,7 +32,7 @@ def test_send_and_recv(
         dest = 0
 
     arr, token = send(arr, token, dest=dest, tag=0, comm=comm)
-    
+
     y = jnp.empty_like(arr)
     y, token = recv(y, token, source=dest, tag=0, comm=comm)
 
@@ -52,12 +52,12 @@ def test_send_and_recv_jit(
 
     def send_recv_fn(x):
         token = gen_token()
-        
+
         if rank == 0:
             dest = 1
         else:
             dest = 0
-        
+
         # Send and receive
         x, token = send(x, token, dest=dest, tag=0, comm=comm)
         y = jnp.empty_like(x)
@@ -83,19 +83,19 @@ def test_send_and_recv_grad(
 
     def func(x):
         token = gen_token()
-        
+
         if rank == 0:
             dest = 1
         else:
             dest = 0
 
         x = x * rank  # Make function rank-dependent
-        
+
         # Send and receive
         x, token = send(x, token, dest=dest, tag=0, comm=comm)
         y = jnp.empty_like(x)
         y, token = recv(y, token, source=dest, tag=0, comm=comm)
-        
+
         # Return scalar for gradient computation
         return jnp.sum(y)
 
@@ -111,4 +111,4 @@ def test_send_and_recv_grad(
 
 
 if __name__ == "__main__":
-    test_send_and_recv((2,2), jnp.float32)
+    test_send_and_recv((2, 2), jnp.float32)
